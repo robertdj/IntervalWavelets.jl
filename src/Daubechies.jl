@@ -12,13 +12,17 @@ function HaarScaling(xi::Real)
 end
 
 @doc """
-	DaubScaling(N, L[, J, k]) -> x,y
+	DaubScaling(N, R) -> Vector, Vector
 
-A Daubechies `N` scaling function at scale `J` and translation `k` evaluated in `0:2^(-L):2N-1`.
+A Daubechies `N` scaling function evaluated in the dyadic rationals at resolution `R`.
 """->
-function DaubScaling(N::Int, L::Int)
-	wt = wavelet( WT.Daubechies{N}() )
-	phi, x = DaubScaling( wt.qmf, L )
+function DaubScaling(N::Int, R::Int)
+	const C = wavelet( WT.Daubechies{N}() ).qmf
+	const supp = support(C)
+	x = dyadic_rationals(supp, R)
+	phi = DaubScaling( C, R )
+
+	return x, phi
 end
 
 @doc """
@@ -52,8 +56,6 @@ function DaubScaling(C::Vector{Float64})
 	L = dyadic_dil_matrix(C)
 
 	# Eigenvector of eigenvalue 1
-	#= eigenvec = eigs(L; nev=1)[2] =#
-	#= E = vec(real(eigenvec)) =#
 	E = nullspace( L-eye(length(C)) )
 
 	# The scaling function should be normalized in L2
@@ -68,7 +70,7 @@ function DaubScaling(C::Vector{Float64})
 end
 
 @doc """
-	DaubScaling(C::Vector, R::Int) -> Vector, Vector
+	DaubScaling(C::Vector, R::Int) -> Vector
 
 Compute function values of the scaling function defined by the filter
 `C` at the dyadic rationals of resolution `R` in the support.
@@ -101,6 +103,6 @@ function DaubScaling(C::Vector{Float64}, R::Int)
 		end
 	end
 
-	return x, phi
+	return phi
 end
 

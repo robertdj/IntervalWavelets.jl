@@ -4,7 +4,6 @@
 The dyadic rationals of resolution `R` in the interval `I`.
 """->
 function dyadic_rationals(I::DaubSupport, res::Int)
-	@assert left(I) < right(I)
 	@assert res >= 0
 	collect( left(I):2.0^(-res):right(I) )
 end
@@ -16,7 +15,6 @@ In a vector of dyadic rationals up to resolution `res` in `I`,
 return the indices of those at exactly `level`.
 """->
 function dyadic_rationals(I::DaubSupport, res::Int, level::Int)
-	@assert left(I) < right(I)
 	@assert 0 <= level <= res
 
 	N = right(I)*2^res + 1

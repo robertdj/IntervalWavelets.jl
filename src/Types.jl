@@ -1,8 +1,17 @@
-typealias DaubSupport Tuple{Int,Int}
-left(I::DaubSupport) = I[1]
-right(I::DaubSupport) = I[2]
+@doc """
+The support of a Daubechies scaling function is an interval with integer end points.
+"""->
+type DaubSupport
+	left::Integer
+	right::Integer
 
-#= Base.length(I) = right(I) - left(I) =#
+	DaubSupport(left,right) = right <= left ? error("Not an interval") : new(left, right)
+end
+
+left(I::DaubSupport) = I.left
+right(I::DaubSupport) = I.right
+Base.length(I::DaubSupport) = right(I) - left(I)
+
 @doc """
 	support(C) -> DaubSupport
 
@@ -10,12 +19,15 @@ Return the length of the support of the scaling function defined by the
 filter vector `C`.
 """->
 function support(C::Vector{Float64})
-	return (0,length(C) - 1)
+	return DaubSupport(0, length(C)-1)
 end
 
+@doc """
+	isinside(x, I::DaubSupport) -> Bool
 
+Returns `true` if `x` is inside `I`.
+"""->
 isinside(x, I::DaubSupport) = left(I) <= x <= right(I)
-
 
 # Convert between values and indices of a vector with the integers in
 # the support I
