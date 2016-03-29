@@ -40,3 +40,35 @@ function dyadic_parent(i::Int, k::Int, L::Int)
 	2*i - 1 - k*2^L
 end
 
+@doc """
+	isuniform(x::AbstractVector) -> Bool
+
+Test if the elements in `x` increments with the same amount (with sign).
+"""->
+function isuniform(x::AbstractVector)
+	@assert (Nx = length(x)) > 1
+
+	if Nx == 2
+		return true
+	end
+
+	diff = x[1] - x[2]
+	for n = 3:Nx
+		if !isapprox(diff, x[n-1] - x[n])
+			return false
+		end
+	end
+
+	return true
+end
+
+@doc """
+	isdyrat(x::AbstractVector) -> Bool
+
+Test if `x` is a vector of dyadic rationals.
+"""->
+function isdyrat(x::AbstractVector)
+	res = -log2(x[2] - x[1])
+	return isuniform(x) && isinteger( res )
+end
+

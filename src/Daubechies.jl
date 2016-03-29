@@ -2,13 +2,13 @@
 # Scaling functions
 
 @doc """
-	HaarScaling( xi[, J, k] )
+	HaarScaling( xi[, J, k] ) -> Float
 
 The Haar scaling function evaluated in `xi` at level `J` and translation `k`.
 By default, `J=0` and `k=0`.
 """->
-function HaarScaling(xi)
-	0 <= xi < 1 ? one(xi) : zero(xi)
+function HaarScaling(xi::Real)
+	zero(xi) <= xi < one(xi) ? 1.0 : 0.0
 end
 
 @doc """
