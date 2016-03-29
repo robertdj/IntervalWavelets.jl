@@ -17,31 +17,6 @@ function boundary_coef_mat(F::BoundaryFilter)
 end
 
 @doc """
-	eigval1(A::Matrix) -> Vector
-
-Returns a unit eigenvector of `A` for the eigenvalue 1.
-It is assumed that the eigenvector is unique.
-"""->
-function eigval1(A::Matrix)
-	eval, evec = eig(A)
-
-	# Find index of eigenvalue 1
-	idx = 1
-	for v in eval
-		if isapprox(v, 1.0)
-			break
-		end
-		idx += 1
-	end
-
-	if idx > length(eval)
-		error("1 is not an eigenvalue")
-	end
-
-	return evec[:,idx]
-end
-
-@doc """
 	DaubScaling(B::BoundaryFilter) -> Vector
 
 Compute the boundary scaling function values at 0.
