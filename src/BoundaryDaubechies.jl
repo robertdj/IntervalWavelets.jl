@@ -29,39 +29,54 @@ function DaubScaling(B::BoundaryFilter)
 	return E
 end
 
-
-function DS(x, k::Int, F::ScalingFilters)
-	if x == 0
-		return 0
+function DS(x::Real, C::Vector{Float64})
+	const S = support(C)
+	if !isinside(x, S)
+		return 0.0
 	end
 
-	R = dyadic_level(x)
+	const N = length(C)
+	const p = div(N,2)
 
-	vm = van_moment(F)
-	@assert 0 <= k < vm
-	IS, BS = support(F)
-
-	phi = DaubScaling(F.internal, R)
-	xx = dyadic_rationals(IS, R)
-
-	if isinside(x, BS)
-		Y = zeros(Float64, length(bfilter(F.left,k)))
-		for l = 0:vm-1
-			Y[l+1] = DS(2*x, l, F)
-		end
-		for m = vm:(vm+2*k)
-			if isinside(2*x-m, IS)
-				Y[m+1] = phi[ x2index(2*x-m,IS,R) ]
-			end
-		end
-
-		@show x, k, Y
-		println( bfilter(F.left,k) )
-		#= @bp =#
-		return sqrt(2)*dot(Y, bfilter(F.left,k))
+	if isinteger(x)
+		y = DaubScaling(C)
+		return y[Int(x)+p]
 	else
-		return zero(float(x))
+		Y = Array{Float64}(N)
+		idx = 0
+		for k in -p+1:p
+			idx += 1
+			Y[idx] = DS(2*x-k, C)
+		end
+		return sqrt2*dot(C,Y)
 	end
+end
+
+function DS(x::Real, k::Int, F::ScalingFilters)
+	const IS, BS = support(F)
+	if !isinside(x, BS) || x == 0
+		return 0.0
+	end
+
+	const vm = van_moment(F)
+	@assert 0 <= k < vm
+
+	const L = bfilter(F.left,k)
+	Y = zeros(Float64, length(L))
+
+	for l = 0:vm-1
+		Y[l+1] = DS(2*x, l, F)
+	end
+
+	for m = vm:(vm+2*k)
+		Y[m+1] = DS(2*x-m, F.internal)
+	end
+
+	return sqrt2*dot(Y, L)
+end
+
+function DS(x::Vector, C::Vector{Float64})
+	map(x -> DS(x,C), x)
 end
 
 function DS(x::Vector, k::Int, F::ScalingFilters)
