@@ -1,14 +1,39 @@
 # Functions and types for interacting with boundary filters
 
-typealias BoundaryFilter Array{Vector}
+#= typealias BoundaryFilter Array{Vector} =#
+immutable BoundaryFilter
+	side::Char
+	van_moment::Integer
+	support::DaubSupport
+	filter::Array{Vector}
+end
+
+left(B::BoundaryFilter) = left(B.support)
+right(B::BoundaryFilter) = right(B.support)
+side(B::BoundaryFilter) = B.side
+
+@doc """
+	integers(B::BoundaryFilter)
+
+The non-zero integers in the support of the boundary scaling function with filter `B`.
+"""->
+function integers(B::BoundaryFilter)
+	if side(B) == 'L'
+		return right(support(B)):-1:1
+	elseif side(B) == 'R'
+		return left(support(B)):-1
+	end
+end
 
 @doc """
 Filters for internal and boundary scaling functions.
 """->
-type ScalingFilters
+immutable ScalingFilters
 	left::BoundaryFilter
 	internal::Vector{Float64}
 	right::BoundaryFilter
+
+	ScalingFilters(L, I, R) = (van_moment(L) == van_moment(I) == van_moment(R) ? new(L, I, R) : throw(AssertionError()))
 end
 
 @doc """
@@ -32,20 +57,20 @@ function ifilter(N::Int)
 end
 
 @doc """
-	bfilter(N::Int, boundary::Char) -> BoundaryFilter
+	bfilter(p::Int, boundary::Char) -> BoundaryFilter
 
-Return the boundary filters for the scaling functions with `N` vanishing moments.
+Return the boundary filters for the scaling functions with `p` vanishing moments.
 `N` can be between 2 and 8.
 
 `boundary` is either `'L'` or `'R'`.
 """->
-function bfilter(N::Int, boundary::Char)
-	@assert 2 <= N <= 8 "Boundary filters have between 2 and 8 vanishing moments"
+function bfilter(p::Integer, boundary::Char)
+	@assert 2 <= p <= 8 "Boundary filters have between 2 and 8 vanishing moments"
 
 	if boundary == 'L'
-		return LEFT_FILTERS[N]
+		 return BoundaryFilter('L', p, DaubSupport(0, 2*p-1), LEFT_FILTERS[p])
 	elseif boundary == 'R'
-		return RIGHT_FILTERS[N]
+		 return BoundaryFilter('R', p, DaubSupport(-2*p+1, 0), RIGHT_FILTERS[p])
 	else
 		error("Boundary must be 'L' or 'R'")
 	end
@@ -56,9 +81,9 @@ end
 
 Return the boundary filter for the `k`'th scaling function (0 <= `k` < the number of vanishing moments).
 """->
-function bfilter(F::BoundaryFilter, k::Int)
-	@assert 0 <= k < length(F)
-	return F[k+1]
+function bfilter(B::BoundaryFilter, k::Int)
+	@assert 0 <= k < van_moment(B)
+	return B.filter[k+1]
 end
 
 
@@ -77,7 +102,7 @@ end
 Return the number of vanishing moments of the boundary scaling functions defined by `F`.
 """->
 function van_moment(F::BoundaryFilter)
-	return length(F)
+	return F.van_moment
 end
 
 @doc """
@@ -86,6 +111,7 @@ end
 Return the support of the internal and boundary scaling functions.
 """->
 function support(F::ScalingFilters)
+	# TODO: Make obsolete
 	vm = van_moment(F)
 
 	return DaubSupport(-vm+1, vm), DaubSupport(0, 2*vm-1)
@@ -93,14 +119,16 @@ end
 
 # TODO: DOC
 function support(B::BoundaryFilter)
-	vm = van_moment(F)
-	DaubSupport(0, 2*vm-1)
+	B.support
 end
 
 function support(B::BoundaryFilter, k::Integer)
-	vm = van_moment(F)
-	@assert 0 <= k < vm
-	DaubSupport(0, vm+k)
+	@assert 0 <= k < (vm = van_moment(B))
+	if B.side == 'L'
+		return DaubSupport(0, vm+k)
+	elseif B.side == 'R'
+		return DaubSupport(-vm-k, 0)
+	end
 end
 
 
@@ -125,7 +153,7 @@ const INTERIOR_FILTERS = Dict{Int, Vector{Float64}}(
 8 => [ 0.00267279339281 ; -0.000428394300246 ; -0.0211456865284 ; 0.00538638875377 ; 0.0694904659113 ; -0.0384935212634 ; -0.0734625087609 ; 0.515398670374 ; 1.09910663054 ; 0.68074534719 ; -0.0866536154058 ; -0.202648655286 ; 0.0107586117505 ; 0.0448236230437 ; -0.000766690896228 ; -0.0047834585115 ] / sqrt2
 )
 
-const LEFT_FILTERS = Dict{Int, BoundaryFilter}(
+const LEFT_FILTERS = Dict{Int, Array{Vector}}(
 2 => Any[
 [ 0.6033325119E+00 ; 0.6908955318E+00 ; -0.3983129977E+00 ]
 ,
@@ -212,7 +240,7 @@ const LEFT_FILTERS = Dict{Int, BoundaryFilter}(
 )
 
 
-const RIGHT_FILTERS = Dict{Int, BoundaryFilter}(
+const RIGHT_FILTERS = Dict{Int, Array{Vector}}(
 2 => Any[
 [ 0.8705087534E+00 ; 0.4348969980E+00 ; 0.2303890438E+00 ]
 ,
