@@ -91,6 +91,18 @@ function support(F::ScalingFilters)
 	return DaubSupport(-vm+1, vm), DaubSupport(0, 2*vm-1)
 end
 
+# TODO: DOC
+function support(B::BoundaryFilter)
+	vm = van_moment(F)
+	DaubSupport(0, 2*vm-1)
+end
+
+function support(B::BoundaryFilter, k::Integer)
+	vm = van_moment(F)
+	@assert 0 <= k < vm
+	DaubSupport(0, vm+k)
+end
+
 
 # ------------------------------------------------------------
 # Boundary low pass filter coefficients for Daubechies wavelets

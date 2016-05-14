@@ -29,6 +29,48 @@ function DaubScaling(B::BoundaryFilter)
 	return E
 end
 
+@doc """
+Compute the boundary scaling function values at the non-zero integers.
+"""->
+function DaubScaling(B::BoundaryFilter, I::Vector{Float64})
+	const vm = van_moment(F)
+	const internal = DaubScaling(F.internal)
+	const IS = support(F.internal)
+	const BS = support(B)
+
+	# Function value at 0
+	Y = zeros(Float64, vm, length(BS)+1)
+	Y[:,1] = DaubScaling(B)
+
+	for x in BS.right:-1:BS.left+1
+		xindex = x2index(x, BS)
+		doublex = 2*x
+		doublex_index = x2index(2*x, BS)
+
+		for k in 1:vm
+			# TODO: copy! ?
+			filterk = bfilter(B, k-1)
+
+			# Boundary contribution
+			if isinside(doublex, BS)
+				for l in 1:vm
+					Y[k,xindex] += sqrt2 * filterk[l] * Y[l,doublex_index]
+				end
+			end
+
+			# Internal contribution
+			for m in vm:vm+2*(k-1)
+				if isinside(doublex-m, IS)
+					idx = x2index(doublex-m, IS)
+					Y[k,xindex] += sqrt2 * filterk[m+1] * internal[idx]
+				end
+			end
+		end
+	end
+
+	return Y
+end
+
 function DS(x::Real, C::Vector{Float64})
 	const S = support(C)
 	if !isinside(x, S)
