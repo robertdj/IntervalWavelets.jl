@@ -30,22 +30,26 @@ function DaubScaling(B::BoundaryFilter)
 end
 
 @doc """
-Compute the boundary scaling function values at the non-zero integers.
+	DaubScaling(B, I) -> Vector
+
+Compute the boundary scaling function defined by boundary filter `B` and internal filter `I` values at the non-zero integers in their support.
 """->
 function DaubScaling(B::BoundaryFilter, I::Vector{Float64})
-	const vm = van_moment(F)
-	const internal = DaubScaling(F.internal)
-	const IS = support(F.internal)
+	const internal = DaubScaling(I)
+	const IS = support(I)
 	const BS = support(B)
 
-	# Function value at 0
-	Y = zeros(Float64, vm, length(BS)+1)
+	# Function values at 0
+	const vm = van_moment(B)
+	const xvals = integers(B)
+	Y = zeros(Float64, vm, length(xvals)+1)
 	Y[:,1] = DaubScaling(B)
 
-	for x in BS.right:-1:BS.left+1
+	xvals = integers(B)
+	for x in xvals
 		xindex = x2index(x, BS)
 		doublex = 2*x
-		doublex_index = x2index(2*x, BS)
+		doublex_index = x2index(doublex, BS)
 
 		for k in 1:vm
 			# TODO: copy! ?
@@ -63,6 +67,57 @@ function DaubScaling(B::BoundaryFilter, I::Vector{Float64})
 				if isinside(doublex-m, IS)
 					idx = x2index(doublex-m, IS)
 					Y[k,xindex] += sqrt2 * filterk[m+1] * internal[idx]
+				end
+			end
+		end
+	end
+
+	return Y
+end
+
+function DaubScaling(B::BoundaryFilter, I::Vector{Float64}, R::Int)
+	@assert R >= 0
+
+	const IS = support(I)
+	const BS = support(B)
+
+	const internal = DaubScaling(I,R)
+	const Ny = length(internal)
+	const vm = van_moment(B)
+	Y = zeros(Float64, vm, Ny)
+
+	# Base level
+	cur_idx = dyadic_rationals(BS, R, 0)
+	Y[:,cur_idx] = DaubScaling(B, I)
+
+	# Recursion: Fill remaining levels
+	const xvals = dyadic_rationals(BS, R)
+	for L in 1:R
+		# Indices of x values on scale L
+		cur_idx = dyadic_rationals(BS, R, L)
+
+		for xindex in cur_idx
+			doublex = 2*xvals[xindex]
+			doublex_index = x2index(doublex, BS, R)
+
+			for k in 1:vm
+				# TODO: copy! ?
+				filterk = bfilter(B, k-1)
+
+				# Boundary contribution
+				# TODO: The support depends on k
+				if isinside(doublex, BS)
+					for l in 1:vm
+						Y[k,xindex] += sqrt2 * filterk[l] * Y[l,doublex_index]
+					end
+				end
+
+				# Internal contribution
+				for m in vm:vm+2*(k-1)
+					if isinside(doublex-m, IS)
+						int_idx = x2index(doublex-m, IS, R)
+						Y[k,xindex] += sqrt2 * filterk[m+1] * internal[int_idx]
+					end
 				end
 			end
 		end

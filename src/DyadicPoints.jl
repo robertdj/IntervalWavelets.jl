@@ -3,8 +3,9 @@
 
 The dyadic rationals of resolution `R` in the interval `I`.
 """->
-function dyadic_rationals(I::DaubSupport, res::Int)
+function dyadic_rationals(I::DaubSupport, res::Integer)
 	@assert res >= 0
+	# TODO: remove collect?
 	collect( left(I):2.0^(-res):right(I) )
 end
 
@@ -14,10 +15,10 @@ end
 In a vector of dyadic rationals up to resolution `res` in `I`,
 return the indices of those at exactly `level`.
 """->
-function dyadic_rationals(I::DaubSupport, res::Int, level::Int)
+function dyadic_rationals(I::DaubSupport, res::Integer, level::Integer)
 	@assert 0 <= level <= res
 
-	N = right(I)*2^res + 1
+	N = length(I)*2^res + 1
 
 	if level == 0
 		step = 2^res
@@ -45,13 +46,10 @@ Test if the elements in `x` increments with the same amount (with sign).
 """->
 function isuniform(x::AbstractVector)
 	@assert (Nx = length(x)) > 1
+	Nx == 2 && return true
 
-	if Nx == 2
-		return true
-	end
-
-	diff = x[1] - x[2]
-	for n = 3:Nx
+	const diff = x[1] - x[2]
+	for n in 3:Nx
 		if !isapprox(diff, x[n-1] - x[n])
 			return false
 		end
@@ -66,7 +64,21 @@ end
 Test if `x` is a vector of dyadic rationals.
 """->
 function isdyrat(x::AbstractVector)
+	@assert issorted(x)
 	res = -log2(x[2] - x[1])
+	res <= precision( eltype(x) ) && return false
 	return isuniform(x) && isinteger( res )
+end
+
+
+#= function dyadic_level(y) =#
+function dyadic_level(x)
+	y = copy(x)
+	level = 0
+	while !isinteger(y)
+		y *= 2
+		level += 1
+	end
+	return level
 end
 

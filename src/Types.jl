@@ -8,7 +8,6 @@ type DaubSupport
 	DaubSupport(left,right) = right <= left ? error("Not an interval") : new(left, right)
 end
 
-# TODO: WARNING: imported binding for I overwritten in module Main
 left(S::DaubSupport) = S.left
 right(S::DaubSupport) = S.right
 Base.length(S::DaubSupport) = right(S) - left(S)
@@ -19,9 +18,14 @@ Base.length(S::DaubSupport) = right(S) - left(S)
 The support of the Daubechies scaling function defined by the filter vector `C`.
 """->
 function support(C::Vector{Float64})
-	#= vm = div(length(C)+1, 2) =#
-	vm = length(C) / 2
+	vm = van_moment(C)
 	return DaubSupport(-vm+1, vm)
+end
+
+function van_moment(C::Vector{Float64})
+	L = length(C)
+	@assert iseven(L)
+	div(L, 2)
 end
 
 @doc """
@@ -56,6 +60,6 @@ index2x(idx::Integer, S::DaubSupport) = idx - 1 + left(S)
 
 # Convert between values and indices of a vector with dyadic rationals
 # at resolution R in the support S
-x2index(x, S::DaubSupport, R::Integer) = Int( (x-left(S)) )*2^R + 1
+x2index(x, S::DaubSupport, R::Integer) = Int( (x-left(S))*2^R ) + 1
 index2x(idx::Integer, S::DaubSupport, R::Integer) = (idx - 1)*2.0^(-R) + left(S)
 
