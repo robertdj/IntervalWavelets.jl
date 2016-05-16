@@ -28,7 +28,8 @@ end
 @doc """
 	dyadic_dil_matrix(C::Vector) -> Matrix
 
-The "dyadic dilation matrix" `D` of the filter `C` with `D[i,j] = C[2i-j]`.
+The "dyadic dilation matrix" `D` of the filter `C`: 
+`D[i,j] = C[2i-j]`.
 """->
 function dyadic_dil_matrix(C::Vector{Float64})
 	const NC = length(C)
@@ -51,8 +52,8 @@ end
 
 Compute function values of the scaling function defined by the filter `C` at the integers in the support.
 """->
-function DaubScaling(C::Vector{Float64})
-	L = dyadic_dil_matrix(C)
+function DaubScaling(C::InteriorFilter)
+	L = dyadic_dil_matrix(C.filter)
 
 	# Eigenvector of eigenvalue 1
 	E = eigval1(L)
@@ -74,7 +75,7 @@ end
 Compute function values of the scaling function defined by the filter
 `C` at the dyadic rationals of resolution `R` in the support.
 """->
-function DaubScaling(C::Vector{Float64}, R::Int)
+function DaubScaling(C::InteriorFilter, R::Int)
 	const supp = support(C)
 	const x = dyadic_rationals(supp, R)
 	const Nx = length(x)
@@ -95,7 +96,7 @@ function DaubScaling(C::Vector{Float64}, R::Int)
 				pidx = dyadic_parent(phin, Ck-1, R)
 				# TODO: Calculate only the necessary pidx
 				if 1 <= pidx <= Nx
-					phi[phin] += sqrt2*C[Ck]*phi[pidx]
+					phi[phin] += sqrt2*C.filter[Ck]*phi[pidx]
 				end
 			end
 		end

@@ -32,11 +32,11 @@ end
 @doc """
 	DaubScaling(B, I) -> Matrix
 
-Compute the boundary scaling function defined by boundary filter `B` and internal filter `I` values at the non-zero integers in their support.
+Compute the boundary scaling function defined by boundary filter `B` and interior filter `I` values at the non-zero integers in their support.
 
 The ouput is a matrix where the `k`'th row are the functions values of the `k-1` scaling function.
 """->
-function DaubScaling(B::BoundaryFilter, I::Vector{Float64})
+function DaubScaling(B::BoundaryFilter, I::InteriorFilter)
 	const internal = DaubScaling(I)
 	const IS = support(I)
 	const BS = support(B)
@@ -80,11 +80,11 @@ end
 @doc """
 	DaubScaling(B, I, R) -> Matrix
 
-Compute the boundary scaling function defined by boundary filter `B` and internal filter `I` values at the dyadic rationals up to resolution `R`in their support.
+Compute the boundary scaling function defined by boundary filter `B` and interiorfilter `I` values at the dyadic rationals up to resolution `R`in their support.
 
 The ouput is a matrix where the `k`'th row are the functions values of the `k-1` scaling function.
 """->
-function DaubScaling(B::BoundaryFilter, I::Vector{Float64}, R::Int)
+function DaubScaling(B::BoundaryFilter, I::InteriorFilter, R::Int)
 	@assert R >= 0
 
 	const IS = support(I)
@@ -139,7 +139,7 @@ end
 # ------------------------------------------------------------
 # Slow, recursive, but easy-to-read scaling functions
 
-function DS(x::Real, C::Vector{Float64})
+function DS(x::Real, C::InteriorFilter)
 	const S = support(C)
 	if !isinside(x, S)
 		return 0.0
@@ -158,12 +158,12 @@ function DS(x::Real, C::Vector{Float64})
 			idx += 1
 			Y[idx] = DS(2*x-k, C)
 		end
-		return sqrt2*dot(C,Y)
+		return sqrt2*dot(C.filter,Y)
 	end
 end
 
 function DS(x::Real, k::Int, F::ScalingFilters)
-	const IS, BS = support(F)
+	const BS = support(F.left)
 	if !isinside(x, BS) || x == 0
 		return 0.0
 	end

@@ -1,6 +1,70 @@
+@doc """
+The support of a Daubechies scaling function.
+"""->
+type DaubSupport
+	left::Integer
+	right::Integer
+
+	DaubSupport(left,right) = right <= left ? error("Not an interval") : new(left, right)
+end
+
+left(S::DaubSupport) = S.left
+right(S::DaubSupport) = S.right
+Base.length(S::DaubSupport) = right(S) - left(S)
+
+
+# ------------------------------------------------------------
+# Functions and types for interacting with interior filters
+
+immutable InteriorFilter
+	van_moment::Integer
+	support::DaubSupport
+	filter::Vector{Float64}
+end
+
+function Base.show(io::IO, I::InteriorFilter)
+	S = support(I)
+	println(io, "Filter for Daubechies ", van_moment(I), " scaling function on [", left(S), ", ", right(S), "]:")
+
+	show(io, I.filter)
+end
+
+@doc """
+	ifilter(p::Int)
+
+Internal Daubechies filter with `p` vanishing moments with the **normal** filters.
+
+	ifilter(p::Int, true)
+
+Internal Daubechies filter with `p` vanishing moments with the filters used for the boundary scaling functions.
+"""->
+function ifilter(p::Integer, boundary::Bool=false)
+	@assert p >= 1 "There must be at least 1 vanishing moment"
+
+	if boundary
+		return InteriorFilter(p, DaubSupport(-p+1,p), INTERIOR_FILTERS[p])
+	else
+		return InteriorFilter(p, DaubSupport(-p+1,p), wavelet(WT.Daubechies{p}()).qmf)
+	end
+end
+
+for func in [:support, :van_moment]
+	@eval begin
+		function $func(C::InteriorFilter)
+			C.$func
+		end
+	end
+end
+
+function Base.length(C::InteriorFilter)
+	length(C.filter)
+end
+
+
+
+# ------------------------------------------------------------
 # Functions and types for interacting with boundary filters
 
-#= typealias BoundaryFilter Array{Vector} =#
 immutable BoundaryFilter
 	side::Char
 	van_moment::Integer
@@ -11,6 +75,19 @@ end
 left(B::BoundaryFilter) = left(B.support)
 right(B::BoundaryFilter) = right(B.support)
 side(B::BoundaryFilter) = B.side
+
+function Base.show(io::IO, B::BoundaryFilter)
+	S = support(B)
+	p = van_moment(B)
+
+	side = (B.side == 'L' ? "left" : "right")
+	println(io, "Filters for ", side, " Daubechies ", p, " scaling function on [", left(S), ", ", right(S), "]:")
+
+	for k in 0:p-1
+		print(io, "\nk = ", k, ": ")
+		show(io, bfilter(B,k))
+	end
+end
 
 @doc """
 	integers(B::BoundaryFilter)
@@ -30,30 +107,24 @@ Filters for internal and boundary scaling functions.
 """->
 immutable ScalingFilters
 	left::BoundaryFilter
-	internal::Vector{Float64}
+	internal::InteriorFilter
 	right::BoundaryFilter
 
-	ScalingFilters(L, I, R) = (van_moment(L) == van_moment(I) == van_moment(R) ? new(L, I, R) : throw(AssertionError()))
+	ScalingFilters(L, I, R) = ( van_moment(L) == van_moment(I) == van_moment(R) ? new(L, I, R) : throw(AssertionError()) )
 end
 
 @doc """
-	scalingfilters(N::Int) -> ScalingFilters
+	scalingfilters(p::Int) -> ScalingFilters
 
-Return the `ScalingFilters` with `N` vanishing moments.
+The boundary and interior filters with `p` vanishing moments.
+The interior filters are the ones used for constructing boundary scaling functions.
 """->
-function scalingfilters(N::Int)
-	#= ScalingFilters( bfilter(N,'L'), ifilter(N), bfilter(N,'R') ) =#
-	ScalingFilters( bfilter(N,'L'), INTERIOR_FILTERS[N], bfilter(N,'R') )
-end
+function scalingfilters(p::Int)
+	L = bfilter(p,'L')
+	I = ifilter(p,true)
+	R = bfilter(p,'R')
 
-@doc """
-	ifilter(N::Int) -> Vector
-
-Internal Daubechies filter with `N` vanishing moments.
-"""->
-function ifilter(N::Int)
-	@assert N >= 1 "There must be at least 1 vanishing moment"
-	wavelet(WT.Daubechies{N}()).qmf
+	ScalingFilters( L, I, R )
 end
 
 @doc """
@@ -105,6 +176,7 @@ function van_moment(F::BoundaryFilter)
 	return F.van_moment
 end
 
+#=
 @doc """
 	support(F::ScalingFilters) -> (DaubSupport, DaubSupport)
 
@@ -116,12 +188,22 @@ function support(F::ScalingFilters)
 
 	return DaubSupport(-vm+1, vm), DaubSupport(0, 2*vm-1)
 end
+=#
 
-# TODO: DOC
+@doc """
+	support(B::BoundaryFilter)
+
+Union of the supports of the boundary scaling functions defined by the filters `B`.
+"""->
 function support(B::BoundaryFilter)
 	B.support
 end
 
+@doc """
+	support(B::BoundaryFilter, k)
+
+Support of the `k`'th boundary scaling function defined by the filters `B`.
+"""->
 function support(B::BoundaryFilter, k::Integer)
 	@assert 0 <= k < (vm = van_moment(B))
 	if B.side == 'L'

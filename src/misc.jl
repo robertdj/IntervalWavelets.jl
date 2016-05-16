@@ -57,3 +57,39 @@ function van_moment(wavename::AbstractString)
 	WT.vanishingmoments( WT.eval(parse(lowername)) )
 end
 
+
+@doc """
+	support(wavename) -> DaubSupport
+
+The support of the Daubechies scaling function `wavename`.
+"""->
+function support(wavename::AbstractString)
+	vm = van_moment(wavename)
+	return DaubSupport(-vm+1, vm)
+end
+
+@doc """
+Compute support of the scaling function/wavelet at scale `J` and with translation `k` from the support `S` of the father/mother.
+"""->
+function support(S::DaubSupport, J::Integer, k::Integer)
+	L = 2.0^(-J)*(left(S) + k)
+	R = 2.0^(-J)*(right(S) + k)
+	DaubSupport(L, R)
+end
+
+@doc """
+	isinside(x, S::DaubSupport) -> Bool
+
+Returns `true` if `x` is inside `S`.
+"""->
+isinside(x, S::DaubSupport) = left(S) <= x <= right(S)
+
+# Convert between values and indices of a vector with the integers in the support S
+x2index(x::Integer, S::DaubSupport) = x + 1 - left(S)
+index2x(idx::Integer, S::DaubSupport) = idx - 1 + left(S)
+
+# Convert between values and indices of a vector with dyadic rationals
+# at resolution R in the support S
+x2index(x, S::DaubSupport, R::Integer) = Int( (x-left(S))*2^R ) + 1
+index2x(idx::Integer, S::DaubSupport, R::Integer) = (idx - 1)*2.0^(-R) + left(S)
+
