@@ -30,9 +30,11 @@ function DaubScaling(B::BoundaryFilter)
 end
 
 @doc """
-	DaubScaling(B, I) -> Vector
+	DaubScaling(B, I) -> Matrix
 
 Compute the boundary scaling function defined by boundary filter `B` and internal filter `I` values at the non-zero integers in their support.
+
+The ouput is a matrix where the `k`'th row are the functions values of the `k-1` scaling function.
 """->
 function DaubScaling(B::BoundaryFilter, I::Vector{Float64})
 	const internal = DaubScaling(I)
@@ -75,6 +77,13 @@ function DaubScaling(B::BoundaryFilter, I::Vector{Float64})
 	return Y
 end
 
+@doc """
+	DaubScaling(B, I, R) -> Matrix
+
+Compute the boundary scaling function defined by boundary filter `B` and internal filter `I` values at the dyadic rationals up to resolution `R`in their support.
+
+The ouput is a matrix where the `k`'th row are the functions values of the `k-1` scaling function.
+"""->
 function DaubScaling(B::BoundaryFilter, I::Vector{Float64}, R::Int)
 	@assert R >= 0
 
@@ -125,6 +134,10 @@ function DaubScaling(B::BoundaryFilter, I::Vector{Float64}, R::Int)
 
 	return Y
 end
+
+
+# ------------------------------------------------------------
+# Slow, recursive, but easy-to-read scaling functions
 
 function DS(x::Real, C::Vector{Float64})
 	const S = support(C)
