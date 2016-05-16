@@ -12,7 +12,7 @@ function HaarScaling(xi::Real)
 end
 
 @doc """
-	DaubScaling(N, R) -> Vector, Vector
+	DaubScaling(N, R) -> x, y
 
 A Daubechies `N` scaling function evaluated in the dyadic rationals at resolution `R`.
 """->
@@ -34,8 +34,7 @@ function dyadic_dil_matrix(C::Vector{Float64})
 	const NC = length(C)
 	dydil_mat = zeros(Float64, NC, NC)
 
-	const sqrt2 = sqrt(2)
-	for nj = 1:NC, ni = 1:NC
+	for nj in 1:NC, ni in 1:NC
 		Cidx = 2*ni - nj
 		# TODO: Avoid this check?
 		if 1 <= Cidx <= NC
@@ -56,9 +55,9 @@ function DaubScaling(C::Vector{Float64})
 	L = dyadic_dil_matrix(C)
 
 	# Eigenvector of eigenvalue 1
-	E = nullspace( L-eye(length(C)) )
+	E = eigval1(L)
 
-	# The scaling function should be normalized in L2
+	# Normalize scaling function in L2
 	scale!(E, 1/sum(E))
 
 	# The first and last entry are both 0
@@ -87,13 +86,12 @@ function DaubScaling(C::Vector{Float64}, R::Int)
 
 	# Recursion: Fill remaining levels
 	const NC = length(C)
-	const sqrt2 = sqrt(2)
-	for L = 1:R
+	for L in 1:R
 		# Indices of x values on scale L
 		cur_idx = dyadic_rationals(supp, R, L)
 
-		for phin = cur_idx
-			for Ck = 1:NC
+		for phin in cur_idx
+			for Ck in 1:NC
 				pidx = dyadic_parent(phin, Ck-1, R)
 				# TODO: Calculate only the necessary pidx
 				if 1 <= pidx <= Nx

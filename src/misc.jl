@@ -47,8 +47,13 @@ function waveparse(wavename::AbstractString, boundary::Bool=false)
 	if !boundary
 		C = wavelet( WT.eval(parse(lowername)) ).qmf
 	else
-		vm = WT.vanishingmoments( WT.eval(parse(lowername)) )
+		vm = van_moment(lowername)
 		C = scalingfilters(vm)
 	end
+end
+
+function van_moment(wavename::AbstractString)
+	lowername = lowercase( wavename )
+	WT.vanishingmoments( WT.eval(parse(lowername)) )
 end
 
