@@ -1,5 +1,5 @@
 @doc """
-The support of a Daubechies scaling function is an interval with integer end points.
+The support of a Daubechies scaling function is an interval.
 """->
 type DaubSupport
 	left::Integer
@@ -8,34 +8,58 @@ type DaubSupport
 	DaubSupport(left,right) = right <= left ? error("Not an interval") : new(left, right)
 end
 
-left(I::DaubSupport) = I.left
-right(I::DaubSupport) = I.right
-Base.length(I::DaubSupport) = right(I) - left(I)
+left(S::DaubSupport) = S.left
+right(S::DaubSupport) = S.right
+Base.length(S::DaubSupport) = right(S) - left(S)
 
 @doc """
 	support(C) -> DaubSupport
 
-Return the length of the support of the scaling function defined by the
-filter vector `C`.
+The support of the Daubechies scaling function defined by the filter vector `C`.
 """->
 function support(C::Vector{Float64})
-	return DaubSupport(0, length(C)-1)
+	vm = van_moment(C)
+	return DaubSupport(-vm+1, vm)
+end
+
+function van_moment(C::Vector{Float64})
+	L = length(C)
+	@assert iseven(L)
+	div(L, 2)
 end
 
 @doc """
-	isinside(x, I::DaubSupport) -> Bool
+	support(wavename) -> DaubSupport
 
-Returns `true` if `x` is inside `I`.
+The support of the Daubechies scaling function `wavename`.
 """->
-isinside(x, I::DaubSupport) = left(I) <= x <= right(I)
+function support(wavename::AbstractString)
+	vm = van_moment(wavename)
+	return DaubSupport(-vm+1, vm)
+end
 
-# Convert between values and indices of a vector with the integers in
-# the support I
-x2index(x::Integer, I::DaubSupport) = x + 1 - left(I)
-index2x(idx::Integer, I::DaubSupport) = idx - 1 + left(I)
+@doc """
+Compute support of the scaling function/wavelet at scale `J` and with translation `k` from the support `S` of the father/mother.
+"""->
+function support(S::DaubSupport, J::Integer, k::Integer)
+	L = 2.0^(-J)*(left(S) + k)
+	R = 2.0^(-J)*(right(S) + k)
+	DaubSupport(L, R)
+end
+
+@doc """
+	isinside(x, S::DaubSupport) -> Bool
+
+Returns `true` if `x` is inside `S`.
+"""->
+isinside(x, S::DaubSupport) = left(S) <= x <= right(S)
+
+# Convert between values and indices of a vector with the integers in the support S
+x2index(x::Integer, S::DaubSupport) = x + 1 - left(S)
+index2x(idx::Integer, S::DaubSupport) = idx - 1 + left(S)
 
 # Convert between values and indices of a vector with dyadic rationals
-# at resolution R in the support I
-x2index(x, I::DaubSupport, R::Integer) = Int( (x-left(I))*2^R ) + 1
-index2x(idx::Integer, I::DaubSupport, R::Integer) = (idx - 1)/2^R + left(I)
+# at resolution R in the support S
+x2index(x, S::DaubSupport, R::Integer) = Int( (x-left(S))*2^R ) + 1
+index2x(idx::Integer, S::DaubSupport, R::Integer) = (idx - 1)*2.0^(-R) + left(S)
 
