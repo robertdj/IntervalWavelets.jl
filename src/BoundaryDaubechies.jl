@@ -87,13 +87,13 @@ The ouput is a matrix where the `k`'th row are the functions values of the `k-1`
 function DaubScaling(B::BoundaryFilter, I::InteriorFilter, R::Int)
 	@assert R >= 0
 
-	const IS = support(I)
-	const BS = support(B)
-
 	const internal = DaubScaling(I,R)
 	const Ny = length(internal)
 	const vm = van_moment(B)
 	Y = zeros(Float64, vm, Ny)
+
+	const IS = support(I)
+	const BS = support(B)
 
 	# Base level
 	cur_idx = dyadic_rationals(BS, R, 0)

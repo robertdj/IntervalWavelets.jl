@@ -14,10 +14,10 @@ end
 @doc """
 	DaubScaling(N, R) -> x, y
 
-A Daubechies `N` scaling function evaluated in the dyadic rationals at resolution `R`.
+A Daubechies `p` scaling function evaluated in the dyadic rationals at resolution `R`.
 """->
-function DaubScaling(N::Int, R::Int)
-	const C = wavelet( WT.Daubechies{N}() ).qmf
+function DaubScaling(p::Int, R::Int)
+	const C = ifilter(p)
 	const supp = support(C)
 	x = dyadic_rationals(supp, R)
 	phi = DaubScaling( C, R )
@@ -70,7 +70,7 @@ function DaubScaling(C::InteriorFilter)
 end
 
 @doc """
-	DaubScaling(C::Vector, R::Int) -> Vector
+	DaubScaling(C::InteriorFilter, R::Int) -> Vector
 
 Compute function values of the scaling function defined by the filter
 `C` at the dyadic rationals of resolution `R` in the support.
