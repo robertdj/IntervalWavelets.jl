@@ -2,14 +2,15 @@ module WaveletPlot
 
 import Wavelets: wavelet, WT
 
-const sqrt2 = sqrt(2)
-
 export
 	# Types
 	ScalingFilters,
+	DaubSupport,
 	BoundaryFilter,
 
 	# Functions
+	left,
+	right,
 	dyadic_rationals,
 	isuniform,
 	x2index,
@@ -22,13 +23,14 @@ export
 	bfilter,
 	weval
 
-include("Types.jl")
+const sqrt2 = sqrt(2)
+
+include("Filters.jl")
 include("misc.jl")
 include("DyadicPoints.jl")
 include("Daubechies.jl")
 include("BoundaryDaubechies.jl")
 include("DilationTranslation.jl")
-include("Filters.jl")
 include("Quad.jl")
 include("Reconstruction.jl")
 
