@@ -1,6 +1,8 @@
 using WaveletPlot
 using Base.Test
 
+println("Testing Daubechies scaling functions...")
+
 #=
 Orthogonality of integer translates of the internal scaling function
 =#
@@ -28,7 +30,7 @@ for N in 2:10
 	for k in 1:right(S)-1
 		fill!(y2, 0.0)
 		y2[k*2^R-1+supp_index] = phi
-		#= @show WaveletPlot.inner(x, y1, y2) =#
+		#@show WaveletPlot.inner(x, y1, y2)
 		@test_approx_eq_eps WaveletPlot.inner(x, y1, y2) 0.0 EPS
 	end
 end

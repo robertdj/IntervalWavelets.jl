@@ -16,6 +16,16 @@ function boundary_coef_mat(F::BoundaryFilter)
 	return coef_mat
 end
 
+function DaubScaling(p::Integer, side::Char, R::Integer)
+	B = bfilter(p, side)
+	I = ifilter(p, true)
+
+	x = dyadic_rationals( support(B), R )
+	Y = DaubScaling(B, I, R)
+
+	return x, Y'
+end
+
 @doc """
 	DaubScaling(B::BoundaryFilter) -> Vector
 
