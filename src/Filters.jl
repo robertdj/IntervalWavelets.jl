@@ -70,6 +70,8 @@ immutable BoundaryFilter
 	van_moment::Integer
 	support::DaubSupport
 	filter::Array{Vector}
+
+	BoundaryFilter(side, p, S, F) = (side == 'L' || side == 'R' ?  new(side, p, S, F) : throw(AssertionError()) )
 end
 
 left(B::BoundaryFilter) = left(B.support)
@@ -81,7 +83,7 @@ function Base.show(io::IO, B::BoundaryFilter)
 	p = van_moment(B)
 
 	side = (B.side == 'L' ? "left" : "right")
-	println(io, "Filters for ", side, " Daubechies ", p, " scaling function on [", left(S), ", ", right(S), "]:")
+	print(io, "Filters for ", side, " Daubechies ", p, " scaling function on [", left(S), ", ", right(S), "]:")
 
 	for k in 0:p-1
 		print(io, "\nk = ", k, ": ")

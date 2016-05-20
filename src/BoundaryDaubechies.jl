@@ -55,9 +55,13 @@ function DaubScaling(B::BoundaryFilter, I::InteriorFilter)
 	const vm = van_moment(B)
 	const xvals = integers(B)
 	Y = zeros(Float64, vm, length(xvals)+1)
-	Y[:,1] = DaubScaling(B)
+	Y[:,x2index(0,BS)] = DaubScaling(B)
 
-	xvals = integers(B)
+	const xvals = integers(B)
+	# The translations of the interior scaling function differ for the two sides
+	const interior_start = ( side(B) == 'L' ? vm : -vm-1 )
+	const interior_iter = ( side(B) == 'L' ? 1 : -1 )
+
 	for x in xvals
 		xindex = x2index(x, BS)
 		doublex = 2*x
@@ -74,12 +78,16 @@ function DaubScaling(B::BoundaryFilter, I::InteriorFilter)
 				end
 			end
 
-			# Internal contribution
-			for m in vm:vm+2*(k-1)
-				if isinside(doublex-m, IS)
-					idx = x2index(doublex-m, IS)
-					Y[k,xindex] += sqrt2 * filterk[m+1] * internal[idx]
+			# Interior contribution
+			fidx = vm
+			interior_arg = doublex - interior_start
+			flength = vm + 2*(k-1) #length(filterk)
+			while fidx <= flength
+				fidx += 1
+				if isinside(interior_arg, IS)
+					Y[k,xindex] += sqrt2 * filterk[fidx] * internal[ x2index(interior_arg,IS) ]
 				end
+				interior_arg -= interior_iter
 			end
 		end
 	end
@@ -132,12 +140,20 @@ function DaubScaling(B::BoundaryFilter, I::InteriorFilter, R::Int)
 				end
 
 				# Internal contribution
+				for m in vm+1:vm+2*k-1
+					if isinside(doublex+m, IS)
+						int_idx = x2index(doublex+m, IS, R)
+						Y[k,xindex] += sqrt2 * filterk[m] * internal[int_idx]
+					end
+				end
+				#=
 				for m in vm:vm+2*(k-1)
 					if isinside(doublex-m, IS)
 						int_idx = x2index(doublex-m, IS, R)
 						Y[k,xindex] += sqrt2 * filterk[m+1] * internal[int_idx]
 					end
 				end
+				=#
 			end
 		end
 	end
@@ -173,7 +189,7 @@ function DS(x::Real, C::InteriorFilter)
 end
 
 function DS(x::Real, k::Int, F::ScalingFilters)
-	const BS = support(F.left)
+	const BS = support(F.right)
 	if !isinside(x, BS) || x == 0
 		return 0.0
 	end
@@ -181,18 +197,20 @@ function DS(x::Real, k::Int, F::ScalingFilters)
 	const vm = van_moment(F)
 	@assert 0 <= k < vm
 
-	const L = bfilter(F.left,k)
-	Y = zeros(Float64, length(L))
+	const B = bfilter(F.right,k)
+	Y = zeros(Float64, length(B))
 
 	for l = 0:vm-1
 		Y[l+1] = DS(2*x, l, F)
 	end
 
-	for m = vm:(vm+2*k)
-		Y[m+1] = DS(2*x-m, F.internal)
+	for m = vm+1:(vm+2*k+1)
+	#= for m = vm:(vm+2*k) =#
+		#= Y[m+1] = DS(2*x-m, F.internal) =#
+		Y[m] = DS(2*x+m, F.internal)
 	end
 
-	return sqrt2*dot(Y, L)
+	return sqrt2*dot(Y, B)
 end
 
 function DS(x::Vector, C::Vector{Float64})
