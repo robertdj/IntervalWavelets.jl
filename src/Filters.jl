@@ -11,6 +11,19 @@ end
 left(S::DaubSupport) = S.left
 right(S::DaubSupport) = S.right
 Base.length(S::DaubSupport) = right(S) - left(S)
+Base.(:+)(S::DaubSupport, k::Integer) = DaubSupport(left(S)+k, right(S)+k)
+Base.(:-)(S::DaubSupport, k::Integer) = DaubSupport(left(S)-k, right(S)-k)
+
+function Base.intersect(S1::DaubSupport, S2::DaubSupport)
+	if left(S1) >= right(S2) || left(S2) >= right(S1)
+		return Void
+	end
+
+	L = max( left(S1), left(S2) )
+	R = min( right(S1), right(S2) )
+
+	DaubSupport(L, R)
+end
 
 
 # ------------------------------------------------------------

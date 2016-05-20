@@ -117,6 +117,9 @@ function DaubScaling(B::BoundaryFilter, I::InteriorFilter, R::Int)
 	cur_idx = dyadic_rationals(BS, R, 0)
 	Y[:,cur_idx] = DaubScaling(B, I)
 
+	const interior_start = ( side(B) == 'L' ? vm : -vm-1 )
+	const interior_iter = ( side(B) == 'L' ? 1 : -1 )
+
 	# Recursion: Fill remaining levels
 	const xvals = dyadic_rationals(BS, R)
 	for L in 1:R
@@ -139,21 +142,17 @@ function DaubScaling(B::BoundaryFilter, I::InteriorFilter, R::Int)
 					end
 				end
 
-				# Internal contribution
-				for m in vm+1:vm+2*k-1
-					if isinside(doublex+m, IS)
-						int_idx = x2index(doublex+m, IS, R)
-						Y[k,xindex] += sqrt2 * filterk[m] * internal[int_idx]
+				# Interior contribution
+				fidx = vm
+				interior_arg = doublex - interior_start
+				flength = vm + 2*(k-1) #length(filterk)
+				while fidx <= flength
+					fidx += 1
+					if isinside(interior_arg, IS)
+						Y[k,xindex] += sqrt2 * filterk[fidx] * internal[ x2index(interior_arg,IS,R) ]
 					end
+					interior_arg -= interior_iter
 				end
-				#=
-				for m in vm:vm+2*(k-1)
-					if isinside(doublex-m, IS)
-						int_idx = x2index(doublex-m, IS, R)
-						Y[k,xindex] += sqrt2 * filterk[m+1] * internal[int_idx]
-					end
-				end
-				=#
 			end
 		end
 	end

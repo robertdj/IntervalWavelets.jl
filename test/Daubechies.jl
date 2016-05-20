@@ -1,7 +1,7 @@
 using WaveletPlot
 using Base.Test
 
-println("Testing Daubechies scaling functions...")
+println("Testing interior scaling functions...")
 
 #=
 Orthogonality of integer translates of the internal scaling function
