@@ -5,24 +5,25 @@ Evaluate the coefficients `coef` of the Haar scaling function basis on `[0,1]`.
 The functions are evaluated at the dyadic rationals of resolution `res`.
 """->
 function weval(coef::AbstractVector, res::Integer)
-	@assert !isempty(coef)
 	@assert res >= 0
-	const Ncoef = length(coef)
+	Ncoef = length(coef)
 	@assert ispow2(Ncoef)
-	const J = Int( log2(Ncoef) )
+	J = Int( log2(Ncoef) )
 
-	const mother_support = support("haar")
-	const x = dyadic_rationals(mother_support, res)
+	# Points in support
+	recon_supp = DaubSupport(0,1)
+	x = dyadic_rationals(recon_supp, res)
 
+	dilation = 2.0^(-J)
+	y = zeros(x)
 
-	const Nx = length(x)
-	y = zeros(Float64, Nx)
-	for m in 1:Ncoef
-		S = support(mother_support, J, m-1)
-		for nx in 1:Nx
-			if isinside(x[nx], S)
-				@inbounds y[nx] += coef[m]*HaarScaling( x[nx], J, m-1 )
-			end
+	for k in 0:Ncoef-1
+		# The indices of the x's in the support of phi_{J,k}
+		start_idx = x2index( dilation*k, recon_supp, res )
+		end_idx = x2index( dilation*(k+1), recon_supp, res )
+
+		for nx in start_idx:end_idx
+			@inbounds y[nx] += coef[k+1]*HaarScaling( x[nx], J, k )
 		end
 	end
 
@@ -36,29 +37,30 @@ Evaluate the coefficients `coef` of the Haar scaling function basis on `[0,1]^2`
 The functions are evaluated at the dyadic rationals of resolution `res`.
 """->
 function weval(coef::AbstractMatrix, res::Integer)
-	@assert !isempty(coef)
-	@assert (Ncoef = size(coef,1)) == size(coef,2)
 	@assert res >= 0
+	@assert (Ncoef = size(coef,1)) == size(coef,2)
+	@assert ispow2(Ncoef)
+	@assert (J = Int(log2(Ncoef)) ) <= res
 
-	mother_support = support("haar")
-	const x = dyadic_rationals(mother_support, res)
-	const J = Int( log2(Ncoef) )
-	const Nx = length(x)
+	recon_supp = DaubSupport(0,1)
+	x = dyadic_rationals(recon_supp, res)
+
+	Nx = length(x)
+	dilation = 2.0^(-J)
 	y = zeros(Float64, Nx, Nx)
 
-	for my in 1:Ncoef, mx in 1:Ncoef
-		Sx = support(mother_support, J, mx-1)
-		Sy = support(mother_support, J, my-1)
+	for ky in 0:Ncoef-1, kx in 0:Ncoef-1
+		startx_idx = x2index( dilation*kx, recon_supp, res )
+		endx_idx = x2index( dilation*(kx+1), recon_supp, res )
 
-		for ny in 1:Nx
-			if !isinside(x[ny], Sy)
-				continue
-			end
-			for nx in 1:Nx
-				if isinside(x[nx], Sx)
-					# TODO: Make Haar for 2D input?
-					y[ny,nx] += coef[my,mx]*HaarScaling(x[nx], J, mx-1) * HaarScaling(x[ny], J, my-1)
-				end
+		starty_idx = x2index( dilation*ky, recon_supp, res )
+		endy_idx = x2index( dilation*(ky+1), recon_supp, res )
+
+		for ny in starty_idx:endy_idx
+			for nx in startx_idx:endx_idx
+				phix = HaarScaling(x[nx]/dilation - kx) / sqrt(dilation)
+				phiy = HaarScaling(x[ny]/dilation - ky) / sqrt(dilation)
+				@inbounds y[ny,nx] += coef[ky+1,kx+1] * phix * phiy
 			end
 		end
 	end

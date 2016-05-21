@@ -2,8 +2,8 @@
 The support of a Daubechies scaling function.
 """->
 type DaubSupport
-	left::Integer
-	right::Integer
+	left::Int64
+	right::Int64
 
 	DaubSupport(left,right) = right <= left ? error("Not an interval") : new(left, right)
 end
