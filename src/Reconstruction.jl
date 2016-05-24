@@ -76,35 +76,30 @@ end
 function weval(coef::AbstractVector, p::Integer, R::Integer)
 	Ncoef = length(coef)
 
-	# Mother scaling functions
-	S = R - J
-	int_filter = ifilter(p, true)
-	iphi = DaubScaling(int_filter, S)
-	#= scale!(iphi, sqrt(Ncoef)) =#
-
-	lfilter = bfilter(p, 'L')
-	lphi = DaubScaling(lfilter, int_filter, S)'
-	rfilter = bfilter(p, 'R')
-	rphi = DaubScaling(rfilter, int_filter, S)'
-
 	# Points in support
 	recon_supp = DaubSupport(0,1)
 	x = dyadic_rationals(recon_supp, R)
 
-	#= dilation = 2^J # = Ncoef =#
-	inv_dil = 1/Ncoef
-	#= sqrt_dil = sqrt(dilation) =#
+	# Allocate output and a temporary array for the individual terms in
+	# the reconstruction
 	y = zeros(x)
 	cur_phi = zeros(x)
+	ZERO = zero( eltype(cur_phi) )
 
 	# ----------------------------------------
 	# Left side
 
+	S = R - J
+	lfilter = bfilter(p, 'L')
+	int_filter = ifilter(p, true)
+	lphi = DaubScaling(lfilter, int_filter, S)'
+	sqrt_dil = sqrt(Ncoef)
+	scale!(lphi, sqrt_dil)
 	Nphi = size(lphi,1)
+
 	coef_idx = 0
 	for k = 0:p-1
 		source_offset = Nphi*k + 1
-
 		copy!( cur_phi, 1, lphi, source_offset, Nphi )
 		BLAS.axpy!( coef[coef_idx+=1], cur_phi, y )
 	end
@@ -112,10 +107,14 @@ function weval(coef::AbstractVector, p::Integer, R::Integer)
 	# ----------------------------------------
 	# Interior
 
+	iphi = DaubScaling(int_filter, S)
+	scale!(iphi, sqrt_dil)
+
+	inv_dil = 1/Ncoef
 	for k in p:Ncoef-p-1
 		dest_offset = x2index( inv_dil*(k-p+1), recon_supp, R )
 
-		fill!( cur_phi, zero(eltype(cur_phi)) )
+		fill!( cur_phi, ZERO )
 		copy!( cur_phi, dest_offset, iphi, 1, Nphi )
 		BLAS.axpy!( coef[coef_idx+=1], cur_phi, y )
 	end
@@ -123,18 +122,22 @@ function weval(coef::AbstractVector, p::Integer, R::Integer)
 	# ----------------------------------------
 	# Right side
 
+	rfilter = bfilter(p, 'R')
+	rphi = DaubScaling(rfilter, int_filter, S)
 	# rphi contains by in the "opposite" order: The first column is the
 	# function closest to the boundary
-	# TODO: Fix in DaubScaling
-	coef_idx = Ncoef + 1
+	rphi = flipdim(rphi,1)'
+	scale!(rphi, sqrt_dil)
+
+	dest_offset = x2index( 1-inv_dil*(2*p-1), recon_supp, R )
 	for k in 0:p-1
 		source_offset = Nphi*k + 1
-		dest_offset = x2index( 1-inv_dil*(p+k), recon_supp, R )
+		# TODO: support/offset depends on k
+		#= dest_offset = x2index( 1-inv_dil*(p+k), recon_supp, R ) =#
 
-		fill!( cur_phi, zero(eltype(cur_phi)) )
-		copy!( cur_phi, length(cur_phi)-Nphi+1, rphi, source_offset, Nphi )
-		# TODO: Remember minus when fixing the above
-		BLAS.axpy!( coef[coef_idx-=1], cur_phi, y )
+		fill!( cur_phi, ZERO )
+		copy!( cur_phi, dest_offset, rphi, source_offset, Nphi )
+		BLAS.axpy!( coef[coef_idx+=1], cur_phi, y )
 	end
 
 	return x, y
