@@ -5,9 +5,7 @@ The dyadic rationals of resolution `R` in the interval `I`.
 """->
 function dyadic_rationals(I::DaubSupport, res::Integer)
 	@assert res >= 0
-
-	# The type is not inferred
-	linspace( left(I), right(I), 2^res+1 )::LinSpace{Float64}
+	return left(I):2.0^(-res):right(I)
 end
 
 @doc """
@@ -30,7 +28,6 @@ function dyadic_rationals(I::DaubSupport, res::Integer, level::Integer)
 	end
 end
 
-#=
 @doc """
 	dyadic_parent(i::Int, k::Int, L::Int)
 
@@ -40,7 +37,6 @@ In the vector `x` where the `i`'th entry is `x_i = (i-1)/2^L`,
 function dyadic_parent(i::Int, k::Int, L::Int)
 	2*i - 1 - k*2^L
 end
-=#
 
 @doc """
 	isuniform(x::AbstractVector) -> Bool
