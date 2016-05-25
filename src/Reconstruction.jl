@@ -147,11 +147,57 @@ function weval(coef::AbstractVector, p::Integer, R::Integer)
 end
 
 
-#= function weval(coef::AbstractMatrix, p::Integer, R::Integer) =#
 function weval2(coef::AbstractVector, p::Integer, R::Integer)
-	# TODO: Input check
 	Ncoef = length(coef)
-	@assert ( J = Int(log2(Ncoef)) ) <= R
+	@assert ispow2(Ncoef)
+	@assert 2 <= p <= 8
+	@assert log2(2*p-1) <= ( J = Int(log2(Ncoef)) ) <= R
+
+	# Collect mother scaling functions
+	S = R - J
+	lfilter = bfilter(p, 'L')
+	int_filter = ifilter(p, true)
+	lphi = DaubScaling(lfilter, int_filter, S)'
+
+	iphi = DaubScaling(int_filter, S)
+
+	rfilter = bfilter(p, 'R')
+	rphi = DaubScaling(rfilter, int_filter, S)'
+
+	PHI = hcat(lphi, iphi, flipdim(rphi,2))
+	sqrt_dil = sqrt(Ncoef)
+	scale!(PHI, sqrt_dil)
+
+	# Allocate output and temporary array
+	y = zeros(2^R + 1)
+	Nphi = length(iphi)
+	phi = Array{Float64}(Nphi)
+
+	# Translation with 1 is a fixed number of indices
+	kinc = x2index( 1/Ncoef, DaubSupport(0,1), R ) - x2index( 0, DaubSupport(0,1), R )
+	slice_idx = 1:Nphi
+
+	sz = size(PHI)
+	for k in 0:Ncoef-1
+		unsafe_DaubScaling!(phi, k, PHI, Ncoef, sz, p)
+
+		if p <= k <= Ncoef - p
+			slice_idx += kinc
+		end
+		z = slice(y, slice_idx)
+		BLAS.axpy!( coef[k+1], phi, z )
+	end
+
+	recon_supp = DaubSupport(0,1)
+	x = dyadic_rationals(recon_supp, R)
+	return x, y
+end
+
+function weval(coef::AbstractMatrix, p::Integer, R::Integer)
+	@assert (Ncoef = size(coef,1)) == size(coef,2)
+	@assert ispow2(Ncoef)
+	@assert 2 <= p <= 8
+	@assert log2(2*p-1) <= ( J = Int(log2(Ncoef)) ) <= R
 
 	# Collect mother scaling functions
 	S = R - J
@@ -169,34 +215,37 @@ function weval2(coef::AbstractVector, p::Integer, R::Integer)
 	scale!(PHI, sqrt_dil)
 
 	# Allocate output and temporary arrays 
-	y = zeros(2^R + 1)
+	y = zeros(2^R+1, 2^R+1)
 	Nphi = length(iphi)
-	phi = Array{Float64}(Nphi)
-	#= y = zeros(2^R, 2^R) =#
-	#= phi = Array{Float64}(Ncoef, Ncoef) =#
-	#= phi1 = Array{Float64}(Ncoef) =#
-	#= phi2 = similar(phi) =#
+	phi = Array{Float64}(Nphi, Nphi)
+	phi1 = Array{Float64}(Nphi)
+	phi2 = similar(phi1)
 
 	# Translation is a fixed number of indices
 	kinc = x2index( 1/Ncoef, DaubSupport(0,1), R ) - x2index( 0, DaubSupport(0,1), R )
-	slice_idx = 1:Nphi
 
+	slicex_idx = 1:Nphi
 	sz = size(PHI)
-	for k in 0:Ncoef-1
-		unsafe_DaubScaling!(phi, k, PHI, Ncoef, sz, p)
-		#= unsafe_DaubScaling!(phi, phi1, phi2, (k1,k2), PHI, Ncoef, sz, p) =#
-
-		if p <= k <= Ncoef - p
-			slice_idx += kinc
+	for kx in 0:Ncoef-1
+		if p <= kx <= Ncoef - p
+			slicex_idx += kinc
 		end
-		z = slice(y, slice_idx)
-		BLAS.axpy!( coef[k+1], phi, z )
+
+		slicey_idx = 1:Nphi
+		for ky in 0:Ncoef-1
+			# TODO: Manually?
+			unsafe_DaubScaling!(phi, phi1, phi2, (ky,kx), PHI, Ncoef, sz, p)
+
+			if p <= ky <= Ncoef - p
+				slicey_idx += kinc
+			end
+
+			z = slice(y, slicey_idx, slicex_idx)
+			BLAS.axpy!( coef[ky+1,kx+1], phi, z )
+		end
 	end
 
-	recon_supp = DaubSupport(0,1)
-	x = dyadic_rationals(recon_supp, R)
-	return x, y
-	#= return y =#
+	return y
 end
 
 @doc """
