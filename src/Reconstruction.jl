@@ -13,8 +13,6 @@ function weval(coef::AbstractVector, res::Integer)
 	recon_supp = DaubSupport(0,1)
 	x = dyadic_rationals(recon_supp, res)
 
-	# TODO: dilation -> Integer
-	#= dilation = 2.0^(-J) =#
 	dilation = 1/Ncoef
 	sqrt_dil = sqrt(dilation)
 	y = zeros(x)
@@ -24,9 +22,9 @@ function weval(coef::AbstractVector, res::Integer)
 		start_idx = x2index( dilation*k, recon_supp, res )
 		end_idx = x2index( dilation*(k+1), recon_supp, res )
 
-		for nx in start_idx:end_idx
+		@inbounds for nx in start_idx:end_idx
 			phi = HaarScaling(x[nx]/dilation - k) / sqrt_dil
-			@inbounds y[nx] += coef[k+1]*phi
+			y[nx] += coef[k+1]*phi
 		end
 	end
 
@@ -53,19 +51,21 @@ function weval(coef::AbstractMatrix, res::Integer)
 	dilation = 2.0^(-J)
 	sqrt_dil = sqrt(dilation)
 
-	for ky in 0:Ncoef-1, kx in 0:Ncoef-1
-		startx_idx = x2index( dilation*kx, recon_supp, res )
-		endx_idx = x2index( dilation*(kx+1), recon_supp, res )
-
+	for ky in 0:Ncoef-1
 		starty_idx = x2index( dilation*ky, recon_supp, res )
 		endy_idx = x2index( dilation*(ky+1), recon_supp, res )
 
-		for nx in startx_idx:endx_idx
-			@inbounds phix = HaarScaling(x[nx]/dilation - kx) / sqrt_dil
+		for kx in 0:Ncoef-1
+			startx_idx = x2index( dilation*kx, recon_supp, res )
+			endx_idx = x2index( dilation*(kx+1), recon_supp, res )
 
-			for ny in starty_idx:endy_idx
-				@inbounds phiy = HaarScaling(x[ny]/dilation - ky) / sqrt_dil
-				@inbounds y[ny,nx] += coef[ky+1,kx+1] * phix * phiy
+			for nx in startx_idx:endx_idx
+				@inbounds phix = HaarScaling(x[nx]/dilation - kx) / sqrt_dil
+
+				@inbounds for ny in starty_idx:endy_idx
+					phiy = HaarScaling(x[ny]/dilation - ky) / sqrt_dil
+					y[ny,nx] += coef[ky+1,kx+1] * phix * phiy
+				end
 			end
 		end
 	end
@@ -95,8 +95,10 @@ function weval(coef::AbstractVector, p::Integer, R::Integer)
 	S = R - J
 	lfilter = bfilter(p, 'L')
 	int_filter = ifilter(p, true)
+
 	lphi = DaubScaling(lfilter, int_filter, S)
 	Nphi = size(lphi,2)
+
 	sqrt_dil = sqrt(Ncoef)
 	scale!(lphi, sqrt_dil)
 
@@ -133,7 +135,6 @@ function weval(coef::AbstractVector, p::Integer, R::Integer)
 	# function closest to the boundary
 	coef_idx = Ncoef + 1
 	for k in 0:p-1
-		source_offset = Nphi*k + 1
 		# TODO: support/offset depends on k
 		#= dest_offset = x2index( 1-inv_dil*(p+k), recon_supp, R ) =#
 
