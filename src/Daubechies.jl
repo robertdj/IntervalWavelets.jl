@@ -16,8 +16,8 @@ end
 
 A Daubechies `p` scaling function evaluated in the dyadic rationals at resolution `R`.
 """->
-function DaubScaling(p::Int, R::Int)
-	const C = ifilter(p)
+function DaubScaling(p::Int, R::Int, symmlet::Bool=false)
+	const C = ifilter(p, symmlet)
 	const supp = support(C)
 	x = dyadic_rationals(supp, R)
 	phi = DaubScaling( C, R )
@@ -93,6 +93,7 @@ function DaubScaling(C::InteriorFilter, R::Int)
 
 		for phin in cur_idx
 			for Ck in 1:NC
+				# TODO: Get rid of dyadic_parent ?
 				pidx = dyadic_parent(phin, Ck-1, R)
 				# TODO: Calculate only the necessary pidx
 				if 1 <= pidx <= Nx
