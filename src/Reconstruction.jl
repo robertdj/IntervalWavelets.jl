@@ -146,3 +146,90 @@ function weval(coef::AbstractVector, p::Integer, R::Integer)
 	return x, y
 end
 
+
+#= function weval(coef::AbstractMatrix, p::Integer, R::Integer) =#
+function weval2(coef::AbstractVector, p::Integer, R::Integer)
+	# TODO: Input check
+	Ncoef = length(coef)
+	@assert ( J = Int(log2(Ncoef)) ) <= R
+
+	# Collect mother scaling functions
+	S = R - J
+	lfilter = bfilter(p, 'L')
+	int_filter = ifilter(p, true)
+	lphi = DaubScaling(lfilter, int_filter, S)'
+
+	iphi = DaubScaling(int_filter, S)
+
+	rfilter = bfilter(p, 'R')
+	rphi = DaubScaling(rfilter, int_filter, S)'
+
+	PHI = hcat(lphi, iphi, flipdim(rphi,2))
+	sqrt_dil = sqrt(Ncoef)
+	scale!(PHI, sqrt_dil)
+
+	# Allocate output and temporary arrays 
+	y = zeros(2^R + 1)
+	Nphi = length(iphi)
+	phi = Array{Float64}(Nphi)
+	#= y = zeros(2^R, 2^R) =#
+	#= phi = Array{Float64}(Ncoef, Ncoef) =#
+	#= phi1 = Array{Float64}(Ncoef) =#
+	#= phi2 = similar(phi) =#
+
+	# Translation is a fixed number of indices
+	kinc = x2index( 1/Ncoef, DaubSupport(0,1), R ) - x2index( 0, DaubSupport(0,1), R )
+	slice_idx = 1:Nphi
+
+	sz = size(PHI)
+	for k in 0:Ncoef-1
+		unsafe_DaubScaling!(phi, k, PHI, Ncoef, sz, p)
+		#= unsafe_DaubScaling!(phi, phi1, phi2, (k1,k2), PHI, Ncoef, sz, p) =#
+
+		if p <= k <= Ncoef - p
+			slice_idx += kinc
+		end
+		z = slice(y, slice_idx)
+		BLAS.axpy!( coef[k+1], phi, z )
+	end
+
+	recon_supp = DaubSupport(0,1)
+	x = dyadic_rationals(recon_supp, R)
+	return x, y
+	#= return y =#
+end
+
+@doc """
+Overwrite `phi` with the `m`'th scaling function from a matrix `Φ` where 
+the first `p` columns are the left scaling functions, the last `p` columns 
+are the right scaling functions and the middle column is the interior
+scaling function.
+"""->
+function unsafe_DaubScaling!( phi::DenseVector, m::Integer, Φ::DenseMatrix, 
+	twopowJ::Integer, sz::Tuple=size(Φ), p::Integer=div(sz[2]-1,2) )
+
+	# TODO: Is it better/faster if Φ is transposed?
+	if m < p
+		unsafe_copy!( phi, 1, Φ, sz[1]*m+1, sz[1] )
+	elseif m >= twopowJ - p
+		unsafe_copy!( phi, 1, Φ, sz[1]*(sz[2]-twopowJ+m)+1, sz[1] )
+	else
+		unsafe_copy!( phi, 1, Φ, sz[1]*p+1, sz[1] )
+	end
+end
+
+@doc """
+Overwrite `phi` with the outer product of `phi1` and `phi1` after they
+have been overwritten with the `m[1]`'th and `m[2]`'th column of `Φ`, respectively.
+"""->
+function unsafe_DaubScaling!( phi::DenseMatrix, phi1::DenseVector, phi2::DenseVector,
+	m::Tuple, Φ::DenseMatrix, twopowJ::Integer, sz::Tuple=size(Φ), p::Integer=div(sz[2]-1,2) )
+
+	unsafe_DaubScaling!(phi1, m[1], Φ, twopowJ, sz, p)
+	unsafe_DaubScaling!(phi2, m[2], Φ, twopowJ, sz, p)
+
+	for j in 1:sz[1], i in 1:sz[1]
+		@inbounds phi[i,j] = phi1[i] * phi2[j]
+	end
+end
+
