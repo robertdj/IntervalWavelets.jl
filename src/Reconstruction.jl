@@ -75,6 +75,9 @@ end
 
 function weval(coef::AbstractVector, p::Integer, R::Integer)
 	Ncoef = length(coef)
+	@assert ispow2(Ncoef)
+	@assert 2 <= p <= 8
+	@assert log2(2*p-1) <= ( J = Int(log2(Ncoef)) ) <= R
 
 	# Points in support
 	recon_supp = DaubSupport(0,1)
@@ -92,15 +95,14 @@ function weval(coef::AbstractVector, p::Integer, R::Integer)
 	S = R - J
 	lfilter = bfilter(p, 'L')
 	int_filter = ifilter(p, true)
-	lphi = DaubScaling(lfilter, int_filter, S)'
+	lphi = DaubScaling(lfilter, int_filter, S)
+	Nphi = size(lphi,2)
 	sqrt_dil = sqrt(Ncoef)
 	scale!(lphi, sqrt_dil)
-	Nphi = size(lphi,1)
 
 	coef_idx = 0
 	for k = 0:p-1
-		source_offset = Nphi*k + 1
-		copy!( cur_phi, 1, lphi, source_offset, Nphi )
+		unsafe_copy!( cur_phi, 1, 1, lphi, k+1, p, Nphi )
 		BLAS.axpy!( coef[coef_idx+=1], cur_phi, y )
 	end
 
@@ -115,7 +117,7 @@ function weval(coef::AbstractVector, p::Integer, R::Integer)
 		dest_offset = x2index( inv_dil*(k-p+1), recon_supp, R )
 
 		fill!( cur_phi, ZERO )
-		copy!( cur_phi, dest_offset, iphi, 1, Nphi )
+		unsafe_copy!( cur_phi, dest_offset, iphi, 1, Nphi )
 		BLAS.axpy!( coef[coef_idx+=1], cur_phi, y )
 	end
 
@@ -124,20 +126,20 @@ function weval(coef::AbstractVector, p::Integer, R::Integer)
 
 	rfilter = bfilter(p, 'R')
 	rphi = DaubScaling(rfilter, int_filter, S)
-	# rphi contains by in the "opposite" order: The first column is the
-	# function closest to the boundary
-	rphi = flipdim(rphi,1)'
 	scale!(rphi, sqrt_dil)
 
 	dest_offset = x2index( 1-inv_dil*(2*p-1), recon_supp, R )
+	# rphi is in "opposite" order, i.e., the first row is the 
+	# function closest to the boundary
+	coef_idx = Ncoef + 1
 	for k in 0:p-1
 		source_offset = Nphi*k + 1
 		# TODO: support/offset depends on k
 		#= dest_offset = x2index( 1-inv_dil*(p+k), recon_supp, R ) =#
 
 		fill!( cur_phi, ZERO )
-		copy!( cur_phi, dest_offset, rphi, source_offset, Nphi )
-		BLAS.axpy!( coef[coef_idx+=1], cur_phi, y )
+		unsafe_copy!( cur_phi, dest_offset, 1, rphi, k+1, p, Nphi )
+		BLAS.axpy!( coef[coef_idx-=1], cur_phi, y )
 	end
 
 	return x, y

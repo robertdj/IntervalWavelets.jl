@@ -68,6 +68,14 @@ function support(wavename::AbstractString)
 	return DaubSupport(-vm+1, vm)
 end
 
+# Overload to add increments for destination and source
+function Base.unsafe_copy!{T}(dest::Array{T}, doffs, dinc, src::Array{T}, soffs, srcinc, n::Integer)
+	for i in 0:n-1
+		@inbounds Core.arrayset(dest, src[i*srcinc+soffs], dinc*i+doffs)
+	end
+	return dest
+end
+
 #=
 @doc """
 Compute support of the scaling function/wavelet at scale `J` and with translation `k` from the support `S` of the father/mother.
