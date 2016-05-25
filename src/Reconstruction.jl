@@ -150,7 +150,10 @@ function weval(coef::AbstractMatrix, p::Integer, R::Integer)
 			end
 
 			z = slice(y, slicey_idx, slicex_idx)
-			BLAS.axpy!( coef[ky+1,kx+1], phi, z )
+			# BLAS.axpy! is using *a lot* of memory
+			for j in 1:Nphi, i in 1:Nphi
+				@inbounds z[i,j] += coef[ky+1,kx+1] * phi[i,j]
+			end
 		end
 	end
 
