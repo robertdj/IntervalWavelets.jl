@@ -1,5 +1,9 @@
 using WaveletPlot
 using Base.Test
 
-# write your own tests here
-@test 1 == 1
+include("Quad.jl")
+include("DyadicPoints.jl")
+include("Daubechies.jl")
+include("BoundaryDaubechies.jl")
+include("Reconstruction.jl")
+
