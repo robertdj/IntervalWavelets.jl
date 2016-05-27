@@ -55,7 +55,7 @@ This is the default.
 function ifilter(p::Integer, symmlet::Bool=true)
 	@assert p >= 1 "There must be at least 1 vanishing moment"
 
-	if symmlet && p > 1
+	if symmlet && 1 < p <= 8
 		return InteriorFilter(p, DaubSupport(-p+1,p), INTERIOR_FILTERS[p])
 	else
 		return InteriorFilter(p, DaubSupport(0,2*p-1), wavelet(WT.Daubechies{p}()).qmf)

@@ -12,6 +12,7 @@ println("Testing reconstruction in wavelet basis...")
 R = 10
 J = 4
 S = R - J
+DS = DaubSupport(0,1)
 
 for p = 2:8
 	for k = 1:2^J

@@ -16,12 +16,17 @@ function boundary_coef_mat(F::BoundaryFilter)
 	return coef_mat
 end
 
+@doc """
+	DaubScaling(p::Integer, side::Char, R::Integer) -> x, Y
+
+Compute the boundary scaling function at resolution `R` on `side` with `p` vanishing moments.
+"""->
 function DaubScaling(p::Integer, side::Char, R::Integer)
 	B = bfilter(p, side)
-	I = ifilter(p, true)
+	IF = ifilter(p, true)
 
 	x = dyadic_rationals( support(B), R )
-	Y = DaubScaling(B, I, R)
+	Y = DaubScaling(B, IF, R)
 
 	return x, Y'
 end
@@ -42,13 +47,14 @@ end
 @doc """
 	DaubScaling(B, I) -> Matrix
 
-Compute the boundary scaling function defined by boundary filter `B` and interior filter `I` values at the non-zero integers in their support.
+Compute the boundary scaling function defined by boundary filter `B` and
+interior filter `F` values at the non-zero integers in their support.
 
 The ouput is a matrix where the `k`'th row are the functions values of the `k-1` scaling function.
 """->
-function DaubScaling(B::BoundaryFilter, I::InteriorFilter)
-	const internal = DaubScaling(I)
-	const IS = support(I)
+function DaubScaling(B::BoundaryFilter, IF::InteriorFilter)
+	const internal = DaubScaling(IF)
+	const IS = support(IF)
 	const BS = support(B)
 
 	# Function values at 0
@@ -102,20 +108,20 @@ Compute the boundary scaling function defined by boundary filter `B` and interio
 
 The ouput is a matrix where the `k`'th row are the functions values of the `k-1` scaling function.
 """->
-function DaubScaling(B::BoundaryFilter, I::InteriorFilter, R::Int)
+function DaubScaling(B::BoundaryFilter, IF::InteriorFilter, R::Int)
 	@assert R >= 0
 
-	const internal = DaubScaling(I,R)
+	const internal = DaubScaling(IF,R)
 	const Ny = length(internal)
 	const vm = van_moment(B)
 	Y = zeros(Float64, vm, Ny)
 
-	const IS = support(I)
+	const IS = support(IF)
 	const BS = support(B)
 
 	# Base level
 	cur_idx = dyadic_rationals(BS, R, 0)
-	Y[:,cur_idx] = DaubScaling(B, I)
+	Y[:,cur_idx] = DaubScaling(B, IF)
 
 	const interior_start = ( side(B) == 'L' ? vm : -vm-1 )
 	const interior_iter = ( side(B) == 'L' ? 1 : -1 )
@@ -157,66 +163,14 @@ function DaubScaling(B::BoundaryFilter, I::InteriorFilter, R::Int)
 		end
 	end
 
-	return Y
-end
-
-
-# ------------------------------------------------------------
-# Slow, recursive, but easy-to-read scaling functions
-
-function DS(x::Real, C::InteriorFilter)
-	const S = support(C)
-	if !isinside(x, S)
-		return 0.0
-	end
-
-	const N = length(C)
-	const p = div(N,2)
-
-	if isinteger(x)
-		y = DaubScaling(C)
-		return y[Int(x)+p]
+	# Hack until the right 0 values are computed
+	# TODO: Fix this
+	if side(B) == 'L'
+		Y[:,1] = Y[:,2]
 	else
-		Y = Array{Float64}(N)
-		idx = 0
-		for k in -p+1:p
-			idx += 1
-			Y[idx] = DS(2*x-k, C)
-		end
-		return sqrt2*dot(C.filter,Y)
-	end
-end
-
-function DS(x::Real, k::Int, F::ScalingFilters)
-	const BS = support(F.right)
-	if !isinside(x, BS) || x == 0
-		return 0.0
+		Y[:,end] = Y[:,end-1]
 	end
 
-	const vm = van_moment(F)
-	@assert 0 <= k < vm
-
-	const B = bfilter(F.right,k)
-	Y = zeros(Float64, length(B))
-
-	for l = 0:vm-1
-		Y[l+1] = DS(2*x, l, F)
-	end
-
-	for m = vm+1:(vm+2*k+1)
-	#= for m = vm:(vm+2*k) =#
-		#= Y[m+1] = DS(2*x-m, F.internal) =#
-		Y[m] = DS(2*x+m, F.internal)
-	end
-
-	return sqrt2*dot(Y, B)
-end
-
-function DS(x::Vector, C::Vector{Float64})
-	map(x -> DS(x,C), x)
-end
-
-function DS(x::Vector, k::Int, F::ScalingFilters)
-	map(x -> DS(x,k,F), x)
+	return Y
 end
 
