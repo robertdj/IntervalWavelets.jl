@@ -16,11 +16,11 @@ end
 
 A Daubechies `p` scaling function evaluated in the dyadic rationals at resolution `R`.
 """->
-function DaubScaling(p::Int, R::Int, symmlet::Bool=false)
-	C = ifilter(p, symmlet)
-	supp = support(C)
+function DaubScaling(p::Int, R::Integer, symmlet::Bool=true)
+	IF = ifilter(p, symmlet)
+	supp = support(IF)
 	x = dyadic_rationals(supp, R)
-	phi = DaubScaling( C, R )
+	phi = DaubScaling( IF, R )
 
 	return x, phi
 end
@@ -48,12 +48,12 @@ end
 
 
 @doc """
-	DaubScaling(C::Vector) -> Vector
+	DaubScaling(C::InteriorFilter) -> Vector
 
 Compute function values of the scaling function defined by the filter `C` at the integers in the support.
 """->
 function DaubScaling(C::InteriorFilter)
-	L = dyadic_dil_matrix(C.filter)
+	L = dyadic_dil_matrix( coef(C) )
 
 	# Eigenvector of eigenvalue 1
 	E = eigval1(L)
@@ -75,10 +75,10 @@ end
 Compute function values of the scaling function defined by the filter
 `C` at the dyadic rationals of resolution `R` in the support.
 """->
-function DaubScaling(C::InteriorFilter, R::Int)
+function DaubScaling(C::InteriorFilter, R::Integer)
 	supp = support(C)
-	x = dyadic_rationals(supp, R)
-	Nx = length(x)
+	# There are 2^R points on each unit + endpoint
+	Nx = length(supp)*2^R + 1
 	phi = zeros(Float64, Nx)
 
 	# Base level
@@ -86,18 +86,21 @@ function DaubScaling(C::InteriorFilter, R::Int)
 	phi[cur_idx] = DaubScaling(C)
 
 	# Recursion: Fill remaining levels
+	coeff = coef(C)
+	Lsupp = left(supp)
+	Rsupp = right(supp)
 	NC = length(C)
 	for L in 1:R
 		# Indices of x values on scale L
 		cur_idx = dyadic_rationals(supp, R, L)
 
-		for phin in cur_idx
-			for Ck in 1:NC
-				# TODO: Get rid of dyadic_parent ?
-				pidx = dyadic_parent(phin, Ck-1, R)
-				# TODO: Calculate only the necessary pidx
-				if 1 <= pidx <= Nx
-					phi[phin] += sqrt2*C.filter[Ck]*phi[pidx]
+		for xindex in cur_idx
+			twox = 2*index2x( xindex, supp, R )
+
+			for k in Lsupp:Rsupp
+				if isinside(twox-k, supp)
+					twox_index = x2index( twox-k, supp, R )
+					phi[xindex] += sqrt2 * coeff[k-Lsupp+1] * phi[twox_index]
 				end
 			end
 		end
