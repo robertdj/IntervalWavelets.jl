@@ -1,4 +1,4 @@
-module WaveletPlot
+module IntervalWavelets
 
 import Wavelets: wavelet, WT
 

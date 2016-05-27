@@ -1,5 +1,5 @@
-using WaveletPlot
-import WaveletPlot: inner, unit
+using IntervalWavelets
+import IntervalWavelets: inner, unit
 using Base.Test
 
 println("Testing reconstruction in wavelet basis...")

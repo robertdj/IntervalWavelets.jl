@@ -1,4 +1,4 @@
-using WaveletPlot
+using IntervalWavelets
 using Base.Test
 
 println("Testing boundary scaling functions...")
@@ -21,8 +21,8 @@ for side in ['L'; 'R'], p in 2:8
 	S = support(F)
 
 	for k in 1:p
-		#@show WaveletPlot.l2norm(x, Y[:,k])
-		@test_approx_eq_eps WaveletPlot.l2norm(x, Y[:,k]) 1.0 10*EPS
+		#@show IntervalWavelets.l2norm(x, Y[:,k])
+		@test_approx_eq_eps IntervalWavelets.l2norm(x, Y[:,k]) 1.0 10*EPS
 
 		for l in k+1:p
 			intersect_supp = intersect( support(F,k-1), support(F,l-1) )
@@ -30,8 +30,8 @@ for side in ['L'; 'R'], p in 2:8
 			startx = x2index( left(intersect_supp), S, R )
 			stopx = x2index( right(intersect_supp), S, R )
 
-			#@show WaveletPlot.inner(xx, Y[startx:stopx,k], Y[startx:stopx,l])
-			@test_approx_eq_eps WaveletPlot.inner(xx, Y[startx:stopx,k], Y[startx:stopx,l]) 0.0 EPS
+			#@show IntervalWavelets.inner(xx, Y[startx:stopx,k], Y[startx:stopx,l])
+			@test_approx_eq_eps IntervalWavelets.inner(xx, Y[startx:stopx,k], Y[startx:stopx,l]) 0.0 EPS
 		end
 	end
 end
@@ -69,8 +69,8 @@ for side in ['L'; 'R'], p in 2:8
 			startC = x2index( left(suppI), suppC+l, R )
 			stopC = x2index( right(suppI), suppC+l, R )
 
-			#@show WaveletPlot.inner(x, interior[startC:stopC], bound[startB:stopB,k+1])
-			@test_approx_eq_eps WaveletPlot.inner(x, interior[startC:stopC], bound[startB:stopB,k+1]) 0.0 EPS
+			#@show IntervalWavelets.inner(x, interior[startC:stopC], bound[startB:stopB,k+1])
+			@test_approx_eq_eps IntervalWavelets.inner(x, interior[startC:stopC], bound[startB:stopB,k+1]) 0.0 EPS
 		end
 	end
 end

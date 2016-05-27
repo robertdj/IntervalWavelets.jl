@@ -1,4 +1,4 @@
-using WaveletPlot
+using IntervalWavelets
 using Base.Test
 
 println("Testing interior scaling functions...")
@@ -20,7 +20,7 @@ for N in 2:10
 	# Base scaling funtion
 	y1 = zeros(x)
 	phi = DaubScaling(C, R)
-	@test_approx_eq_eps WaveletPlot.l2norm(dyadic_rationals(S,R), phi) 1.0 EPS
+	@test_approx_eq_eps IntervalWavelets.l2norm(dyadic_rationals(S,R), phi) 1.0 EPS
 
 	supp_index = [1:length(phi);]
 	y1[supp_index] = phi
@@ -30,8 +30,8 @@ for N in 2:10
 	for k in 1:right(S)-1
 		fill!(y2, 0.0)
 		y2[k*2^R-1+supp_index] = phi
-		#@show WaveletPlot.inner(x, y1, y2)
-		@test_approx_eq_eps WaveletPlot.inner(x, y1, y2) 0.0 EPS
+		#@show IntervalWavelets.inner(x, y1, y2)
+		@test_approx_eq_eps IntervalWavelets.inner(x, y1, y2) 0.0 EPS
 	end
 end
 

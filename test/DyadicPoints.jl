@@ -1,4 +1,4 @@
-using WaveletPlot
+using IntervalWavelets
 using Wavelets
 using Base.Test
 

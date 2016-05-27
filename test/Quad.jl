@@ -1,4 +1,4 @@
-import WaveletPlot: trapezquad
+import IntervalWavelets: trapezquad
 using Base.Test
 
 # Test trapezquad

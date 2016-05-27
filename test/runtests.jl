@@ -1,4 +1,4 @@
-using WaveletPlot
+using IntervalWavelets
 using Base.Test
 
 include("Quad.jl")

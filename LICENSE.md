@@ -1,4 +1,4 @@
-The WaveletPlot.jl package is licensed under the MIT "Expat" License:
+The IntervalWavelets.jl package is licensed under the MIT "Expat" License:
 
 > Copyright (c) 2016: Robert DJ.
 >

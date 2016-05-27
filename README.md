@@ -1,9 +1,9 @@
-# WaveletPlot
+# IntervalWavelets
 
-[![Build Status](https://travis-ci.org/robertdj/WaveletPlot.jl.svg?branch=master)](https://travis-ci.org/robertdj/WaveletPlot.jl)
-[![codecov.io](https://codecov.io/github/robertdj/WaveletPlot.jl/coverage.svg?branch=master)](https://codecov.io/github/robertdj/WaveletPlot.jl?branch=master)
+[![Build Status](https://travis-ci.org/robertdj/IntervalWavelets.jl.svg?branch=master)](https://travis-ci.org/robertdj/IntervalWavelets.jl)
+[![codecov.io](https://codecov.io/github/robertdj/IntervalWavelets.jl/coverage.svg?branch=master)](https://codecov.io/github/robertdj/IntervalWavelets.jl?branch=master)
 
-*WaveletPlot* is a Julia package for computing ordinary/interior Daubechies scaling functions and the moment preserving boundary scaling functions of Cohen, Daubechies and Vial.
+*IntervalWavelets* is a Julia package for computing ordinary/interior Daubechies scaling functions and the moment preserving boundary scaling functions of Cohen, Daubechies and Vial.
 See the [enclosed document](doc/boundary_wavelets.pdf) for further description of these functions.
 
 
@@ -19,7 +19,7 @@ C = ifilter(p)
 A second, boolean argument determines whether or not to use the linear phase (`true`) or minimum phase (`false`) scaling function; the default is `true`.
 
 Except for the explicit [Haar wavelet](https://en.wikipedia.org/wiki/Haar_wavelet), Daubechies scaling functions can only be calculated at the [dyadic rationals](https://en.wikipedia.org/wiki/Dyadic_rational), i.e., points of the form k/2^R for R >= 0.
-In *WaveletPlot* R is called the *resolution* of the dyadic rationals.
+In *IntervalWavelets* R is called the *resolution* of the dyadic rationals.
 A Daubechies scaling function defined by a filter `C` is evaluated at all dyadic rationals of resolution R in its support with the command
 
 ```julia
@@ -62,7 +62,7 @@ returns the points where the functions are evaluated, as for the interior scalin
 
 A representation of a 1D or 2D function in a scaling function basis is a vector or matrix of coefficients with respect to that basis.
 The reconstruction of the function from this array is a linear combination of scaling functions.
-In *WaveletPlot* reconstructions are computed on the unit interval.
+In *IntervalWavelets* reconstructions are computed on the unit interval.
 
 Let `coeff` be an array with side(s) that is/are a power of 2.
 To compute the reconstruction in the Haar basis in the dyadic rationals of resolution `R`, use
@@ -92,5 +92,6 @@ A lot of the testing is based on computing inner products in L^2([0,1]) and to d
 In Julia, simply run
 
 ```julia
-Pkg.add("WaveletPlot")
+Pkg.add("IntervalWavelets")
 ```
+
