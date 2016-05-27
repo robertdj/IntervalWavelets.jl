@@ -127,8 +127,8 @@ function weval(coef::AbstractMatrix, p::Integer, R::Integer)
 	y = zeros(2^R+1, 2^R+1)
 	Nphi = size(PHI,1)
 	phi = Array{Float64}(Nphi, Nphi)
-	phi1 = Array{Float64}(Nphi)
-	phi2 = similar(phi1)
+	phix = Array{Float64}(Nphi)
+	phiy = similar(phix)
 
 	# Translation is a fixed number of indices
 	kinc = x2index( 1/Ncoef, DaubSupport(0,1), R ) - 1
@@ -140,10 +140,13 @@ function weval(coef::AbstractMatrix, p::Integer, R::Integer)
 			slicex_idx += kinc
 		end
 
+		unsafe_DaubScaling!(phix, kx, PHI, Ncoef, sz, p)
 		slicey_idx = 1:Nphi
 		for ky in 0:Ncoef-1
-			# TODO: Manually?
-			unsafe_DaubScaling!(phi, phi1, phi2, (ky,kx), PHI, Ncoef, sz, p)
+			unsafe_DaubScaling!(phiy, ky, PHI, Ncoef, sz, p)
+			for j in 1:sz[1], i in 1:sz[1]
+				@inbounds phi[i,j] = phiy[i] * phix[j]
+			end
 
 			if p <= ky <= Ncoef - p
 				slicey_idx += kinc
@@ -169,28 +172,13 @@ scaling function.
 function unsafe_DaubScaling!( phi::DenseVector, m::Integer, Φ::DenseMatrix, 
 	twopowJ::Integer, sz::Tuple=size(Φ), p::Integer=div(sz[2]-1,2) )
 
-	# TODO: Is it better/faster if Φ is transposed?
+	# TODO: Let interior be the first
 	if m < p
 		unsafe_copy!( phi, 1, Φ, sz[1]*m+1, sz[1] )
 	elseif m >= twopowJ - p
 		unsafe_copy!( phi, 1, Φ, sz[1]*(sz[2]-twopowJ+m)+1, sz[1] )
 	else
 		unsafe_copy!( phi, 1, Φ, sz[1]*p+1, sz[1] )
-	end
-end
-
-@doc """
-Overwrite `phi` with the outer product of `phi1` and `phi1` after they
-have been overwritten with the `m[1]`'th and `m[2]`'th column of `Φ`, respectively.
-"""->
-function unsafe_DaubScaling!( phi::DenseMatrix, phi1::DenseVector, phi2::DenseVector,
-	m::Tuple, Φ::DenseMatrix, twopowJ::Integer, sz::Tuple=size(Φ), p::Integer=div(sz[2]-1,2) )
-
-	unsafe_DaubScaling!(phi1, m[1], Φ, twopowJ, sz, p)
-	unsafe_DaubScaling!(phi2, m[2], Φ, twopowJ, sz, p)
-
-	for j in 1:sz[1], i in 1:sz[1]
-		@inbounds phi[i,j] = phi1[i] * phi2[j]
 	end
 end
 

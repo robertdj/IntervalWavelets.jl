@@ -1,3 +1,10 @@
+# TODO: Include type parameter?
+function unit(length::Integer, entry::Integer)
+	u = zeros(Float64, length)
+	u[entry] = one(Float64)
+	return u
+end
+
 @doc """
 	eigval1(A::Matrix) -> Vector
 

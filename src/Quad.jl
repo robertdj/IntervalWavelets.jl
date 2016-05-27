@@ -34,3 +34,21 @@ function l2norm(x::AbstractVector, y::AbstractVector)
 	trapezquad( x, abs2(y) )
 end
 
+
+# ------------------------------------------------------------------------
+
+function trapezquad(x::AbstractVector, y::AbstractVector, z::AbstractMatrix)
+	Nx = length(x)
+	col_integrals = Array{Float64}(Nx)
+	for j = 1:Nx
+		colz = slice(z, :, j)
+		col_integrals[j] = trapezquad(y, colz)
+	end
+
+	trapezquad(x, col_integrals)
+end
+
+function trapezquad(x::AbstractVector, y::AbstractVector, z::AbstractMatrix, v::AbstractMatrix)
+	trapezquad( x, y, z.*conj(v) )
+end
+
