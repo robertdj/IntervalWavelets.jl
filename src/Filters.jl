@@ -2,8 +2,8 @@
 The support of a Daubechies scaling function.
 """->
 type DaubSupport
-	left::Integer
-	right::Integer
+	left::Int64
+	right::Int64
 
 	DaubSupport(left,right) = right <= left ? error("Not an interval") : new(left, right)
 end
@@ -49,12 +49,12 @@ Internal Daubechies filter with `p` vanishing moments with the **normal** filter
 
 	ifilter(p::Int, true)
 
-Internal Daubechies filter with `p` vanishing moments with the filters used for the boundary scaling functions.
+Internal Daubechies filter with `p` vanishing moments with the symmlet filters.
 """->
-function ifilter(p::Integer, boundary::Bool=false)
+function ifilter(p::Integer, symmlet::Bool=false)
 	@assert p >= 1 "There must be at least 1 vanishing moment"
 
-	if boundary
+	if symmlet
 		return InteriorFilter(p, DaubSupport(-p+1,p), INTERIOR_FILTERS[p])
 	else
 		return InteriorFilter(p, DaubSupport(-p+1,p), wavelet(WT.Daubechies{p}()).qmf)
