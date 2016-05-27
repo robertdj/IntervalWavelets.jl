@@ -5,7 +5,7 @@ The boundary coefficients collected in a matrix where the `i`'th row
 contains the coefficients of the `i`'th boundary scaling function.
 """->
 function boundary_coef_mat(F::BoundaryFilter)
-	const vm = van_moment(F)
+	vm = van_moment(F)
 	coef_mat = zeros(Float64, vm, vm)
 
 	for row = 1:vm
@@ -53,20 +53,20 @@ interior filter `F` values at the non-zero integers in their support.
 The ouput is a matrix where the `k`'th row are the functions values of the `k-1` scaling function.
 """->
 function DaubScaling(B::BoundaryFilter, IF::InteriorFilter)
-	const internal = DaubScaling(IF)
-	const IS = support(IF)
-	const BS = support(B)
+	internal = DaubScaling(IF)
+	IS = support(IF)
+	BS = support(B)
 
 	# Function values at 0
-	const vm = van_moment(B)
-	const xvals = integers(B)
+	vm = van_moment(B)
+	xvals = integers(B)
 	Y = zeros(Float64, vm, length(xvals)+1)
 	Y[:,x2index(0,BS)] = DaubScaling(B)
 
-	const xvals = integers(B)
+	xvals = integers(B)
 	# The translations of the interior scaling function differ for the two sides
-	const interior_start = ( side(B) == 'L' ? vm : -vm-1 )
-	const interior_iter = ( side(B) == 'L' ? 1 : -1 )
+	interior_start = ( side(B) == 'L' ? vm : -vm-1 )
+	interior_iter = ( side(B) == 'L' ? 1 : -1 )
 
 	for x in xvals
 		xindex = x2index(x, BS)
@@ -111,23 +111,23 @@ The ouput is a matrix where the `k`'th row are the functions values of the `k-1`
 function DaubScaling(B::BoundaryFilter, IF::InteriorFilter, R::Int)
 	@assert R >= 0
 
-	const internal = DaubScaling(IF,R)
-	const Ny = length(internal)
-	const vm = van_moment(B)
+	internal = DaubScaling(IF,R)
+	Ny = length(internal)
+	vm = van_moment(B)
 	Y = zeros(Float64, vm, Ny)
 
-	const IS = support(IF)
-	const BS = support(B)
+	IS = support(IF)
+	BS = support(B)
 
 	# Base level
 	cur_idx = dyadic_rationals(BS, R, 0)
 	Y[:,cur_idx] = DaubScaling(B, IF)
 
-	const interior_start = ( side(B) == 'L' ? vm : -vm-1 )
-	const interior_iter = ( side(B) == 'L' ? 1 : -1 )
+	interior_start = ( side(B) == 'L' ? vm : -vm-1 )
+	interior_iter = ( side(B) == 'L' ? 1 : -1 )
 
 	# Recursion: Fill remaining levels
-	const xvals = dyadic_rationals(BS, R)
+	xvals = dyadic_rationals(BS, R)
 	for L in 1:R
 		# Indices of x values on scale L
 		cur_idx = dyadic_rationals(BS, R, L)

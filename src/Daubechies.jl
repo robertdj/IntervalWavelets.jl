@@ -17,8 +17,8 @@ end
 A Daubechies `p` scaling function evaluated in the dyadic rationals at resolution `R`.
 """->
 function DaubScaling(p::Int, R::Int, symmlet::Bool=false)
-	const C = ifilter(p, symmlet)
-	const supp = support(C)
+	C = ifilter(p, symmlet)
+	supp = support(C)
 	x = dyadic_rationals(supp, R)
 	phi = DaubScaling( C, R )
 
@@ -32,7 +32,7 @@ The "dyadic dilation matrix" `D` of the filter `C`:
 `D[i,j] = C[2i-j]`.
 """->
 function dyadic_dil_matrix(C::Vector{Float64})
-	const NC = length(C)
+	NC = length(C)
 	dydil_mat = zeros(Float64, NC, NC)
 
 	for nj in 1:NC, ni in 1:NC
@@ -76,9 +76,9 @@ Compute function values of the scaling function defined by the filter
 `C` at the dyadic rationals of resolution `R` in the support.
 """->
 function DaubScaling(C::InteriorFilter, R::Int)
-	const supp = support(C)
-	const x = dyadic_rationals(supp, R)
-	const Nx = length(x)
+	supp = support(C)
+	x = dyadic_rationals(supp, R)
+	Nx = length(x)
 	phi = zeros(Float64, Nx)
 
 	# Base level
@@ -86,7 +86,7 @@ function DaubScaling(C::InteriorFilter, R::Int)
 	phi[cur_idx] = DaubScaling(C)
 
 	# Recursion: Fill remaining levels
-	const NC = length(C)
+	NC = length(C)
 	for L in 1:R
 		# Indices of x values on scale L
 		cur_idx = dyadic_rationals(supp, R, L)

@@ -47,7 +47,7 @@ function isuniform(x::AbstractVector)
 	@assert (Nx = length(x)) > 1
 	Nx == 2 && return true
 
-	const diff = x[1] - x[2]
+	diff = x[1] - x[2]
 	for n in 3:Nx
 		if !isapprox(diff, x[n-1] - x[n])
 			return false
