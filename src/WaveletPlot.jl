@@ -16,12 +16,15 @@ export
 	x2index,
 	index2x,
 	support,
+	coef,
 	DaubScaling,
 	waveparse,
 	van_moment,
 	ifilter,
 	bfilter,
-	weval
+	weval,
+	x2index,
+	index2x
 
 const sqrt2 = sqrt(2)
 

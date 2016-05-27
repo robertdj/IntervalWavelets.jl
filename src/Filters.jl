@@ -35,11 +35,11 @@ immutable InteriorFilter
 	filter::Vector{Float64}
 end
 
-function Base.show(io::IO, I::InteriorFilter)
-	S = support(I)
-	println(io, "Filter for Daubechies ", van_moment(I), " scaling function on [", left(S), ", ", right(S), "]:")
+function Base.show(io::IO, IF::InteriorFilter)
+	S = support(IF)
+	println(io, "Filter for Daubechies ", van_moment(IF), " scaling function on [", left(S), ", ", right(S), "]:")
 
-	show(io, I.filter)
+	show(io, IF.filter)
 end
 
 @doc """
@@ -50,14 +50,15 @@ Internal Daubechies filter with `p` vanishing moments with the **normal** filter
 	ifilter(p::Int, true)
 
 Internal Daubechies filter with `p` vanishing moments with the symmlet filters.
+This is the default.
 """->
-function ifilter(p::Integer, symmlet::Bool=false)
+function ifilter(p::Integer, symmlet::Bool=true)
 	@assert p >= 1 "There must be at least 1 vanishing moment"
 
-	if symmlet
+	if symmlet && p > 1
 		return InteriorFilter(p, DaubSupport(-p+1,p), INTERIOR_FILTERS[p])
 	else
-		return InteriorFilter(p, DaubSupport(-p+1,p), wavelet(WT.Daubechies{p}()).qmf)
+		return InteriorFilter(p, DaubSupport(0,2*p-1), wavelet(WT.Daubechies{p}()).qmf)
 	end
 end
 
@@ -69,8 +70,10 @@ for func in [:support, :van_moment]
 	end
 end
 
+coef(C::InteriorFilter) = C.filter
+
 function Base.length(C::InteriorFilter)
-	length(C.filter)
+	length(coef(C))
 end
 
 
@@ -84,6 +87,7 @@ immutable BoundaryFilter
 	support::DaubSupport
 	filter::Array{Vector}
 
+	# TODO: Checkargs as in Disrtibutions
 	BoundaryFilter(side, p, S, F) = (side == 'L' || side == 'R' ?  new(side, p, S, F) : throw(AssertionError()) )
 end
 
@@ -125,7 +129,8 @@ immutable ScalingFilters
 	internal::InteriorFilter
 	right::BoundaryFilter
 
-	ScalingFilters(L, I, R) = ( van_moment(L) == van_moment(I) == van_moment(R) ? new(L, I, R) : throw(AssertionError()) )
+	ScalingFilters(L, IF, R) = ( van_moment(L) == van_moment(IF) ==
+	van_moment(R) ? new(L, IF, R) : throw(AssertionError()) )
 end
 
 @doc """
@@ -136,10 +141,10 @@ The interior filters are the ones used for constructing boundary scaling functio
 """->
 function scalingfilters(p::Int)
 	L = bfilter(p,'L')
-	I = ifilter(p,true)
+	IF = ifilter(p,true)
 	R = bfilter(p,'R')
 
-	ScalingFilters( L, I, R )
+	ScalingFilters( L, IF, R )
 end
 
 @doc """
