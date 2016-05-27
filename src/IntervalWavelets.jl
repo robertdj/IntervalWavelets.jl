@@ -29,11 +29,10 @@ export
 const sqrt2 = sqrt(2)
 
 include("Filters.jl")
-include("misc.jl")
+include("Misc.jl")
 include("DyadicPoints.jl")
 include("Daubechies.jl")
 include("BoundaryDaubechies.jl")
-include("DilationTranslation.jl")
 include("Quad.jl")
 include("Reconstruction.jl")
 
