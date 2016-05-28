@@ -4,27 +4,32 @@ import Wavelets: wavelet, WT
 
 export
 	# Types
-	ScalingFilters,
 	DaubSupport,
+	InteriorFilter,
 	BoundaryFilter,
 
-	# Functions
+	# Filter functions
 	left,
 	right,
+	support,
+	coef,
+	van_moment,
+	ifilter,
+	bfilter,
+
+	# Dyadic rationals
 	dyadic_rationals,
 	isuniform,
 	x2index,
 	index2x,
-	support,
-	coef,
-	DaubScaling,
-	waveparse,
-	van_moment,
-	ifilter,
-	bfilter,
-	weval,
 	x2index,
-	index2x
+	index2x,
+
+	# Scaling functions
+	DaubScaling,
+
+	# Reconstruction
+	weval
 
 const sqrt2 = sqrt(2)
 

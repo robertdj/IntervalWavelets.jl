@@ -123,32 +123,6 @@ function integers(B::BoundaryFilter)
 end
 
 @doc """
-Filters for internal and boundary scaling functions.
-"""->
-immutable ScalingFilters
-	left::BoundaryFilter
-	internal::InteriorFilter
-	right::BoundaryFilter
-
-	ScalingFilters(L, IF, R) = ( van_moment(L) == van_moment(IF) ==
-	van_moment(R) ? new(L, IF, R) : throw(AssertionError()) )
-end
-
-@doc """
-	scalingfilters(p::Int) -> ScalingFilters
-
-The boundary and interior filters with `p` vanishing moments.
-The interior filters are the ones used for constructing boundary scaling functions.
-"""->
-function scalingfilters(p::Int)
-	L = bfilter(p,'L')
-	IF = ifilter(p,true)
-	R = bfilter(p,'R')
-
-	ScalingFilters( L, IF, R )
-end
-
-@doc """
 	bfilter(p::Int, boundary::Char) -> BoundaryFilter
 
 Return the boundary filters for the scaling functions with `p` vanishing moments.
@@ -180,15 +154,6 @@ end
 
 
 @doc """
-	van_moment(F::ScalingFilters) -> Integer
-
-Return the number of vanishing moments of the boundary scaling functions defined by `F`.
-"""->
-function van_moment(F::ScalingFilters)
-	return van_moment(F.left)
-end
-
-@doc """
 	van_moment(F::BoundaryFilter) -> Integer
 
 Return the number of vanishing moments of the boundary scaling functions defined by `F`.
@@ -196,20 +161,6 @@ Return the number of vanishing moments of the boundary scaling functions defined
 function van_moment(F::BoundaryFilter)
 	return F.van_moment
 end
-
-#=
-@doc """
-	support(F::ScalingFilters) -> (DaubSupport, DaubSupport)
-
-Return the support of the internal and boundary scaling functions.
-"""->
-function support(F::ScalingFilters)
-	# TODO: Make obsolete
-	vm = van_moment(F)
-
-	return DaubSupport(-vm+1, vm), DaubSupport(0, 2*vm-1)
-end
-=#
 
 @doc """
 	support(B::BoundaryFilter)

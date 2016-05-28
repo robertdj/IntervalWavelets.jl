@@ -38,38 +38,6 @@ function eigval1(A::DenseMatrix{Float64})
 	return vecs[:,eval1_index[]]
 end
 
-
-@doc """
-	waveparse(wavename::AbstractString) -> Vector
-
-Return `wavename`'s filter.
-
-	waveparse(wavename::AbstractString, true) -> ScalingFilters
-
-Return `wavename`'s internal and boundary filters.
-
-Currently, only Daubechies wavelets are supported and they are denoted 
-
-- `"Haar"`.
-- `"dbN"` where `N` is an integer between 1 and 8.
-"""->
-function waveparse(wavename::AbstractString, boundary::Bool=false)
-	# TODO: Enforce Daubechies only
-	lowername = lowercase( wavename )
-
-	# The Haar wavelet does not have boundary issues
-	if lowername == "haar" || lowername == "db1"
-		boundary = false
-	end
-
-	if !boundary
-		C = wavelet( WT.eval(parse(lowername)) ).qmf
-	else
-		vm = van_moment(lowername)
-		C = scalingfilters(vm)
-	end
-end
-
 function van_moment(wavename::AbstractString)
 	lowername = lowercase( wavename )
 	WT.vanishingmoments( WT.eval(parse(lowername)) )

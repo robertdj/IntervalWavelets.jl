@@ -119,7 +119,6 @@ function DaubScaling(B::BoundaryFilter, IF::InteriorFilter, R::Int)
 	BS = support(B)
 
 	# Base level
-	# TODO: Remove and use index2x as in DaubScaling
 	cur_idx = dyadic_rationals(BS, R, 0)
 	Y[:,cur_idx] = DaubScaling(B, IF)
 
