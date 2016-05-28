@@ -1,7 +1,10 @@
-# TODO: Include type parameter?
 function unit(length::Integer, entry::Integer)
-	u = zeros(Float64, length)
-	u[entry] = one(Float64)
+	unit(Float64, length, entry)
+end
+
+function unit(T::Type, length::Integer, entry::Integer)
+	u = zeros(T, length)
+	u[entry] = one(T)
 	return u
 end
 
@@ -83,16 +86,6 @@ function support(wavename::AbstractString)
 	return DaubSupport(-vm+1, vm)
 end
 
-#=
-@doc """
-Compute support of the scaling function/wavelet at scale `J` and with translation `k` from the support `S` of the father/mother.
-"""->
-function support(S::DaubSupport, J::Integer, k::Integer)
-	L = 2.0^(-J)*(left(S) + k)
-	R = 2.0^(-J)*(right(S) + k)
-	DaubSupport(L, R)
-end
-=#
 
 @doc """
 	isinside(x, S::DaubSupport) -> Bool

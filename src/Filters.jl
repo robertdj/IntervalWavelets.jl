@@ -30,7 +30,7 @@ end
 # Functions and types for interacting with interior filters
 
 immutable InteriorFilter
-	van_moment::Integer
+	van_moment::Int64
 	support::DaubSupport
 	filter::Vector{Float64}
 end
@@ -83,9 +83,9 @@ end
 
 immutable BoundaryFilter
 	side::Char
-	van_moment::Integer
+	van_moment::Int64
 	support::DaubSupport
-	filter::Array{Vector}
+	filter::Array{Vector{Float64}}
 
 	# TODO: Checkargs as in Disrtibutions
 	BoundaryFilter(side, p, S, F) = (side == 'L' || side == 'R' ?  new(side, p, S, F) : throw(AssertionError()) )
@@ -116,8 +116,9 @@ The non-zero integers in the support of the boundary scaling function with filte
 function integers(B::BoundaryFilter)
 	if side(B) == 'L'
 		return right(support(B)):-1:1
-	elseif side(B) == 'R'
-		return left(support(B)):-1
+	else side(B) == 'R'
+		# The explicit step ensures type stability
+		return left(support(B)):1:-1
 	end
 end
 
