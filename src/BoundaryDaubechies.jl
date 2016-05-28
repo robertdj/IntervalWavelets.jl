@@ -31,11 +31,11 @@ function DaubScaling(p::Integer, side::Char, R::Integer)
 	return x, Y'
 end
 
-@doc """
+#=
 	DaubScaling(B::BoundaryFilter) -> Vector
 
 Compute the boundary scaling function values at 0.
-"""->
+=#
 function DaubScaling(B::BoundaryFilter)
 	boundary_mat = boundary_coef_mat(B)
 	E = eigval1(boundary_mat)
@@ -44,14 +44,14 @@ function DaubScaling(B::BoundaryFilter)
 	return E
 end
 
-@doc """
+#=
 	DaubScaling(B, I) -> Matrix
 
 Compute the boundary scaling function defined by boundary filter `B` and
 interior filter `I` at the non-zero integers in their support.
 
 The ouput is a matrix where the `k`'th row are the functions values of the `k-1` scaling function.
-"""->
+=#
 function DaubScaling(B::BoundaryFilter, IF::InteriorFilter)
 	internal = DaubScaling(IF)
 	IS = support(IF)
@@ -103,7 +103,7 @@ end
 @doc """
 	DaubScaling(B, I, R) -> Matrix
 
-Compute the boundary scaling function defined by boundary filter `B` and interior filter `I` at the dyadic rationals up to resolution `R`in their support.
+Compute the boundary scaling function defined by boundary filter `B` and interior filter `I` at the dyadic rationals up to resolution `R` in their support.
 
 The ouput is a matrix where the `k`'th row are the functions values of the `k-1` scaling function.
 """->

@@ -12,7 +12,7 @@ function HaarScaling(xi::Real)
 end
 
 @doc """
-	DaubScaling(N, R) -> x, y
+	DaubScaling(p, R) -> x, y
 
 A Daubechies `p` scaling function evaluated in the dyadic rationals at resolution `R`.
 """->
@@ -47,11 +47,11 @@ function dyadic_dil_matrix(C::Vector{Float64})
 end
 
 
-@doc """
+#=
 	DaubScaling(C::InteriorFilter) -> Vector
 
 Compute function values of the scaling function defined by the filter `C` at the integers in the support.
-"""->
+=#
 function DaubScaling(C::InteriorFilter)
 	L = dyadic_dil_matrix( coef(C) )
 

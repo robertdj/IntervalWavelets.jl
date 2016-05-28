@@ -134,9 +134,9 @@ function bfilter(p::Integer, boundary::Char)
 	2 <= p <= 8 || throw(AssertionError())
 
 	if boundary == 'L'
-		 return BoundaryFilter('L', p, DaubSupport(0, 2*p-1), LEFT_FILTERS[p])
+		 return BoundaryFilter('L', p, DaubSupport(0, 2*p-1), LEFT_SCALING_FILTERS[p])
 	elseif boundary == 'R'
-		 return BoundaryFilter('R', p, DaubSupport(-2*p+1, 0), RIGHT_FILTERS[p])
+		 return BoundaryFilter('R', p, DaubSupport(-2*p+1, 0), RIGHT_SCALING_FILTERS[p])
 	else
 		error("Boundary must be 'L' or 'R'")
 	end
@@ -207,7 +207,7 @@ const INTERIOR_FILTERS = Dict{Int, Vector{Float64}}(
 8 => [ 0.00267279339281 ; -0.000428394300246 ; -0.0211456865284 ; 0.00538638875377 ; 0.0694904659113 ; -0.0384935212634 ; -0.0734625087609 ; 0.515398670374 ; 1.09910663054 ; 0.68074534719 ; -0.0866536154058 ; -0.202648655286 ; 0.0107586117505 ; 0.0448236230437 ; -0.000766690896228 ; -0.0047834585115 ] / sqrt2
 )
 
-const LEFT_FILTERS = Dict{Int, Array{Vector}}(
+const LEFT_SCALING_FILTERS = Dict{Int, Array{Vector}}(
 2 => Any[
 [ 0.6033325119E+00 ; 0.6908955318E+00 ; -0.3983129977E+00 ]
 ,
@@ -294,7 +294,7 @@ const LEFT_FILTERS = Dict{Int, Array{Vector}}(
 )
 
 
-const RIGHT_FILTERS = Dict{Int, Array{Vector}}(
+const RIGHT_SCALING_FILTERS = Dict{Int, Array{Vector}}(
 2 => Any[
 [ 0.8705087534E+00 ; 0.4348969980E+00 ; 0.2303890438E+00 ]
 ,
