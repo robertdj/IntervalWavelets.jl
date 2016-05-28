@@ -11,12 +11,20 @@ end
 Returns a unit eigenvector of `A` for the eigenvalue 1 if this eigenspace is 1D.
 Otherwise, return an error.
 """->
-function eigval1(A::Matrix)
-	evals, evecs = eig(A)
+function eigval1(A::DenseMatrix{Float64})
+	E = eigfact(A)
+	# Types are hardcoded; otherwise instability occurs
+	isreal(E[:values]) || throw(DomainError())
+	vals = E[:values]::Vector{Float64}
+	vecs = E[:vectors]::Matrix{Float64}
 
 	# Find index of eigenvalue 1
-	isevals1 = map( x->isapprox(x,1.0), evals )
-	eval1_index = find(isevals1)
+	eval1_index = Vector{Int64}()
+	for i in 1:length(vals)
+		if isapprox(vals[i], 1.0)
+			push!(eval1_index, i)
+		end
+	end
 
 	if isempty(eval1_index)
 		error("1 is not an eigenvalue")
@@ -24,7 +32,7 @@ function eigval1(A::Matrix)
 		error("The eigenspace of 1 is more than 1D")
 	end
 
-	return evecs[:,eval1_index[]]
+	return vecs[:,eval1_index[]]
 end
 
 
