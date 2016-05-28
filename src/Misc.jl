@@ -1,7 +1,10 @@
-# TODO: Include type parameter?
 function unit(length::Integer, entry::Integer)
-	u = zeros(Float64, length)
-	u[entry] = one(Float64)
+	unit(Float64, length, entry)
+end
+
+function unit(T::Type, length::Integer, entry::Integer)
+	u = zeros(T, length)
+	u[entry] = one(T)
 	return u
 end
 
@@ -11,12 +14,20 @@ end
 Returns a unit eigenvector of `A` for the eigenvalue 1 if this eigenspace is 1D.
 Otherwise, return an error.
 """->
-function eigval1(A::Matrix)
-	evals, evecs = eig(A)
+function eigval1(A::DenseMatrix{Float64})
+	E = eigfact(A)
+	# Types are hardcoded; otherwise instability occurs
+	isreal(E[:values]) || throw(DomainError())
+	vals = E[:values]::Vector{Float64}
+	vecs = E[:vectors]::Matrix{Float64}
 
 	# Find index of eigenvalue 1
-	isevals1 = map( x->isapprox(x,1.0), evals )
-	eval1_index = find(isevals1)
+	eval1_index = Vector{Int64}()
+	for i in 1:length(vals)
+		if isapprox(vals[i], 1.0)
+			push!(eval1_index, i)
+		end
+	end
 
 	if isempty(eval1_index)
 		error("1 is not an eigenvalue")
@@ -24,39 +35,7 @@ function eigval1(A::Matrix)
 		error("The eigenspace of 1 is more than 1D")
 	end
 
-	return evecs[:,eval1_index[]]
-end
-
-
-@doc """
-	waveparse(wavename::AbstractString) -> Vector
-
-Return `wavename`'s filter.
-
-	waveparse(wavename::AbstractString, true) -> ScalingFilters
-
-Return `wavename`'s internal and boundary filters.
-
-Currently, only Daubechies wavelets are supported and they are denoted 
-
-- `"Haar"`.
-- `"dbN"` where `N` is an integer between 1 and 8.
-"""->
-function waveparse(wavename::AbstractString, boundary::Bool=false)
-	# TODO: Enforce Daubechies only
-	lowername = lowercase( wavename )
-
-	# The Haar wavelet does not have boundary issues
-	if lowername == "haar" || lowername == "db1"
-		boundary = false
-	end
-
-	if !boundary
-		C = wavelet( WT.eval(parse(lowername)) ).qmf
-	else
-		vm = van_moment(lowername)
-		C = scalingfilters(vm)
-	end
+	return vecs[:,eval1_index[]]
 end
 
 function van_moment(wavename::AbstractString)
@@ -75,16 +54,6 @@ function support(wavename::AbstractString)
 	return DaubSupport(-vm+1, vm)
 end
 
-#=
-@doc """
-Compute support of the scaling function/wavelet at scale `J` and with translation `k` from the support `S` of the father/mother.
-"""->
-function support(S::DaubSupport, J::Integer, k::Integer)
-	L = 2.0^(-J)*(left(S) + k)
-	R = 2.0^(-J)*(right(S) + k)
-	DaubSupport(L, R)
-end
-=#
 
 @doc """
 	isinside(x, S::DaubSupport) -> Bool
