@@ -108,7 +108,7 @@ Compute the boundary scaling function defined by boundary filter `B` and interio
 The ouput is a matrix where the `k`'th row are the functions values of the `k-1` scaling function.
 """->
 function DaubScaling(B::BoundaryFilter, IF::InteriorFilter, R::Int)
-	@assert R >= 0
+	R >= 0 || throw(DomainError())
 
 	internal = DaubScaling(IF,R)
 	Ny = length(internal)

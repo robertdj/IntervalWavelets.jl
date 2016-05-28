@@ -3,9 +3,9 @@
 
 The dyadic rationals of resolution `R` in the interval `I`.
 """->
-function dyadic_rationals(I::DaubSupport, res::Integer)
-	@assert res >= 0
-	return left(I):2.0^(-res):right(I)
+function dyadic_rationals(I::DaubSupport, R::Integer)
+	R >= 0 || throw(DomainError())
+	return left(I):2.0^(-R):right(I)
 end
 
 @doc """
@@ -14,16 +14,16 @@ end
 In a vector of dyadic rationals up to resolution `res` in `I`,
 return the indices of those at exactly `level`.
 """->
-function dyadic_rationals(I::DaubSupport, res::Integer, level::Integer)
-	@assert 0 <= level <= res
+function dyadic_rationals(I::DaubSupport, R::Integer, level::Integer)
+	0 <= level <= R || throw(DomainError())
 
-	N = length(I)*2^res + 1
+	N = length(I)*2^R + 1
 
 	if level == 0
-		step = 2^res
+		step = 2^R
 		return 1:step:N
 	else
-		step = 2^(res-level)
+		step = 2^(R-level)
 		return 1+step:2*step:N
 	end
 end
@@ -34,7 +34,7 @@ end
 Test if the elements in `x` increments with the same amount (with sign).
 """->
 function isuniform(x::AbstractVector)
-	@assert (Nx = length(x)) > 1
+	(Nx = length(x)) > 1 || throw(DomainError())
 	Nx == 2 && return true
 
 	diff = x[1] - x[2]

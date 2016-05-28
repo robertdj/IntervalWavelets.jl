@@ -6,8 +6,8 @@ The functions are evaluated at the dyadic rationals of resolution `res`.
 """->
 function weval(coef::AbstractVector, res::Integer)
 	Ncoef = length(coef)
-	@assert ispow2(Ncoef)
-	@assert (J = Int(log2(Ncoef)) ) <= res
+	ispow2(Ncoef) || throw(AssertionError())
+	(J = Int(log2(Ncoef)) ) <= res || throw(AssertionError())
 
 	# Points in support
 	recon_supp = DaubSupport(0,1)
@@ -38,10 +38,10 @@ Evaluate the coefficients `coef` of the Haar scaling function basis on `[0,1]^2`
 The functions are evaluated at the dyadic rationals of resolution `res`.
 """->
 function weval(coef::AbstractMatrix, res::Integer)
-	@assert res >= 0
-	@assert (Ncoef = size(coef,1)) == size(coef,2)
-	@assert ispow2(Ncoef)
-	@assert ( J = Int(log2(Ncoef)) ) <= res
+	res >= 0 || throw(DomainError())
+	(Ncoef = size(coef,1)) == size(coef,2) || throw(DimensionMismatch())
+	ispow2(Ncoef) || throw(AssertionError())
+	(J = Int(log2(Ncoef)) ) <= res || throw(DomainError())
 
 	recon_supp = DaubSupport(0,1)
 	x = dyadic_rationals(recon_supp, res)
@@ -78,9 +78,9 @@ end
 
 function weval(coef::AbstractVector, p::Integer, R::Integer)
 	Ncoef = length(coef)
-	@assert ispow2(Ncoef)
-	@assert 2 <= p <= 8
-	@assert log2(2*p-1) <= ( J = Int(log2(Ncoef)) ) <= R
+	ispow2(Ncoef) || throw(AssertionError())
+	2 <= p <= 8 || throw(AssertionError())
+	log2(2*p-1) <= ( J = Int(log2(Ncoef)) ) <= R || throw(AssertionError())
 
 	# Collect mother scaling functions
 	PHI = allDaubScaling(p, R-J)
@@ -113,10 +113,10 @@ function weval(coef::AbstractVector, p::Integer, R::Integer)
 end
 
 function weval(coef::AbstractMatrix, p::Integer, R::Integer)
-	@assert (Ncoef = size(coef,1)) == size(coef,2)
-	@assert ispow2(Ncoef)
-	@assert 2 <= p <= 8
-	@assert log2(2*p-1) <= ( J = Int(log2(Ncoef)) ) <= R
+	(Ncoef = size(coef,1)) == size(coef,2) || throw(DimensionMismatch())
+	ispow2(Ncoef) || throw(AssertionError())
+	2 <= p <= 8 || throw(AssertionError())
+	log2(2*p-1) <= ( J = Int(log2(Ncoef)) ) <= R || throw(AssertionError())
 
 	# Collect mother scaling functions
 	PHI = allDaubScaling(p, R-J)
@@ -192,8 +192,8 @@ order).
 All functions are computed at resolution `R`.
 """->
 function allDaubScaling(p::Integer, R::Integer)
-	@assert 0 <= p <= 8
-	@assert R >= 0
+	1 <= p <= 8 || throw(AssertionError())
+	R >= 0 || throw(DomainError())
 
 	lfilter = bfilter(p, 'L')
 	int_filter = ifilter(p, true)

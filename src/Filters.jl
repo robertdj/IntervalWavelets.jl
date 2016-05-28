@@ -53,7 +53,7 @@ Internal Daubechies filter with `p` vanishing moments with the symmlet filters.
 This is the default.
 """->
 function ifilter(p::Integer, symmlet::Bool=true)
-	@assert p >= 1 "There must be at least 1 vanishing moment"
+	p < 1 && throw(DomainError())
 
 	if symmlet && 1 < p <= 8
 		return InteriorFilter(p, DaubSupport(-p+1,p), INTERIOR_FILTERS[p])
@@ -131,7 +131,7 @@ Return the boundary filters for the scaling functions with `p` vanishing moments
 `boundary` is either `'L'` or `'R'`.
 """->
 function bfilter(p::Integer, boundary::Char)
-	@assert 2 <= p <= 8 "Boundary filters have between 2 and 8 vanishing moments"
+	2 <= p <= 8 || throw(AssertionError())
 
 	if boundary == 'L'
 		 return BoundaryFilter('L', p, DaubSupport(0, 2*p-1), LEFT_FILTERS[p])
@@ -148,7 +148,7 @@ end
 Return the boundary filter for the `k`'th scaling function (0 <= `k` < the number of vanishing moments).
 """->
 function bfilter(B::BoundaryFilter, k::Int)
-	@assert 0 <= k < van_moment(B)
+	0 <= k < van_moment(B) || throw(DomainError())
 	return B.filter[k+1]
 end
 
@@ -177,7 +177,7 @@ end
 Support of the `k`'th boundary scaling function defined by the filters `B`.
 """->
 function support(B::BoundaryFilter, k::Integer)
-	@assert 0 <= k < (vm = van_moment(B))
+	0 <= k < (vm = van_moment(B)) || throw(DomainError())
 	if B.side == 'L'
 		return DaubSupport(0, vm+k)
 	elseif B.side == 'R'
