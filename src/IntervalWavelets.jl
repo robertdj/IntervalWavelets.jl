@@ -29,6 +29,7 @@ export
 	DaubScaling,
 
 	# Reconstruction
+	IntervalScaling,
 	weval
 
 const sqrt2 = sqrt(2)

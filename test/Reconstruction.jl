@@ -9,41 +9,43 @@ println("Testing reconstruction in wavelet basis...")
 - Unit vectors should reconstruct a single function
 =#
 
-R = 10
+R = 7
 J = 4
 S = R - J
 DS = DaubSupport(0,1)
 
+
+# ------------------------------------------------------------------------
+# 1D
+
 for p = 2:8
-	for k = 1:2^J
-		u = unit(2^J, k)
+	for k = 0:2^J-1
+		u = unit(2^J, k+1)
 		xrecon, yrecon = weval(u, p, R)
 
-		# The reconstructed function is dilated, scaled and maybe translated so
-		# the non-zero part is extracted
-		if 1 <= k <= p
-			x, Y = DaubScaling(p, 'L', S)
-			y = Y[:,k]
+		y = IntervalScaling(p, k, J, R)
+		#@show k, norm(yrecon - y)
+		@test_approx_eq yrecon y
+	end
+end
 
-			sidx = 1
-			eidx = x2index( 2.0^-J*(2*p-1), DS, R)
-		elseif p < k <= 2^J-p
-			x, y = DaubScaling(p, S, true)
 
-			DS = DaubSupport(0,1)
-			sidx = x2index( 2.0^(-J)*(-p+k), DS, R )
-			eidx = x2index( 2.0^(-J)*(p+k-1), DS, R )
-		elseif k > 2^J-p
-			x, Y = DaubScaling(p, 'R', S)
-			y = Y[:,2^J-k+1]
+# ------------------------------------------------------------------------
+# 2D
 
-			sidx = x2index( 1-2.0^(-J)*(2*p-1), DS, R )
-			eidx = x2index( 1, DS, R )
-		end
+for p = 2:8
+	@show p
+	for k = 0:2^J-1, l = 0:2^J-1
+		u1 = unit(2^J, k+1)
+		u2 = unit(2^J, l+1)
+		U = u1*u2'
+		yrecon = weval(U, p, R)
 
-		yrecon = yrecon[sidx:eidx]
-		#@show k, norm(yrecon-sqrt(2.0^J)*y)
-		@test_approx_eq yrecon sqrt(2.0^J)*y
+		y1 = IntervalScaling(p, k, J, R)
+		y2 = IntervalScaling(p, l, J, R)
+		Y = y1*y2'
+		#@show k, l, norm(yrecon - Y)
+		@test_approx_eq yrecon Y
 	end
 end
 
