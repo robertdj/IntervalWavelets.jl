@@ -207,3 +207,80 @@ function allDaubScaling(p::Integer, R::Integer)
 	hcat(lphi, iphi, flipdim(rphi,2))
 end
 
+@doc """
+	IntervalScaling(p::Int, k::Int, J::Int, R::Int) -> x, y
+
+On the interval [0,1] there are 2^J functions at scale `J` ordered such
+that the first `p` are left boundary scaling functions, the last `p` are
+right boundary scaling functions and the middle 2^J-2p are translated
+interior scaling functions.
+
+`IntervalScaling` returns the `k`'th function computed at the dyadic rationals of resolution `R`.
+
+Note that the right boundary scaling functions are ordered differently
+than the output of `DaubScaling`:
+The output of 
+
+	IntervalScaling(p, 2^J, J, R)
+
+is (a translated, dilated and scaled version of) the first column of `Y`
+in
+
+	x, Y = DaubScaling(p, 'R', R)
+"""->
+function IntervalScaling(p::Integer, k::Integer, J::Integer, R::Integer)
+	2 <= p <= 8 || throw(AssertionError())
+	log2(2*p-1) <= J <= R || throw(AssertionError("The scale is too small compared to p or too large compared to R"))
+	0 <= k < (Ny = 2^J) || throw(AssertionError("This interval wavelet does not exist"))
+
+	IF = ifilter(p)
+	RmJ = R - J
+	DS = DaubSupport(0,1)
+	if 0 <= k < p
+		BF = bfilter(p,'L')
+		Y = DaubScaling(BF, IF, RmJ)
+		y = vec( Y[k+1,:] )
+
+		# The indices of the support
+		start_idx = x2index(0, DS, R)
+		end_idx = x2index( 2.0^-J*(2*p-1), DS, R)
+	elseif p <= k < Ny-p
+		y = DaubScaling(IF, RmJ)
+
+		start_idx = x2index( 2.0^-J*(-p+k+1), DS, R )
+		end_idx = x2index( 2.0^-J*(p+k), DS, R )
+	else
+		BF = bfilter(p,'R')
+		Y = DaubScaling(BF, IF, RmJ)
+		y = vec( Y[Ny-1-k+1,:] )
+
+		start_idx = x2index( 1-2.0^-J*(2*p-1), DS, R )
+		end_idx = x2index( 1, DS, R )
+	end
+
+	phi = zeros(Float64, 2^R+1)
+	scale!(y, sqrt(Ny))
+	phi[start_idx:end_idx] = y
+
+	return phi
+end
+
+@doc """
+	IntervalScaling(p::Int, J::Int, R::Int) -> matrix
+
+Returns all 2^J scaling functions of scale `J` at resolution `R` on
+[0,1] as a `2^R+1`-by-2^J`.
+
+**Note:** 
+You should probably only use this function for small values of `J`.
+"""->
+function IntervalScaling(p::Integer, J::Integer, R::Integer)
+
+	Y = Array{Float64}(2^R+1, 2^J)
+	for k = 0:2^J-1
+		Y[:,k+1] = IntervalScaling(p, k, J, R)
+	end
+
+	return Y
+end
+
