@@ -172,13 +172,12 @@ scaling function.
 function unsafe_DaubScaling!( phi::DenseVector, m::Integer, Φ::DenseMatrix, 
 	twopowJ::Integer, sz::Tuple=size(Φ), p::Integer=div(sz[2]-1,2) )
 
-	# TODO: Let interior be the first
-	if m < p
-		unsafe_copy!( phi, 1, Φ, sz[1]*m+1, sz[1] )
-	elseif m >= twopowJ - p
-		unsafe_copy!( phi, 1, Φ, sz[1]*(sz[2]-twopowJ+m)+1, sz[1] )
-	else
+	if p <= m < twopowJ - p
 		unsafe_copy!( phi, 1, Φ, sz[1]*p+1, sz[1] )
+	elseif m < p
+		unsafe_copy!( phi, 1, Φ, sz[1]*m+1, sz[1] )
+	else
+		unsafe_copy!( phi, 1, Φ, sz[1]*(sz[2]-twopowJ+m)+1, sz[1] )
 	end
 end
 

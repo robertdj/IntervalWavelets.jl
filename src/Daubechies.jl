@@ -33,11 +33,11 @@ The "dyadic dilation matrix" `D` of the filter `C`:
 """->
 function dyadic_dil_matrix(C::Vector{Float64})
 	NC = length(C)
-	dydil_mat = zeros(Float64, NC, NC)
+	sz = NC - 2
+	dydil_mat = zeros(Float64, sz, sz)
 
-	for nj in 1:NC, ni in 1:NC
-		Cidx = 2*ni - nj
-		# TODO: Avoid this check?
+	for nj in 1:sz, ni in 1:sz
+		Cidx = 2*ni - nj + 1
 		if 1 <= Cidx <= NC
 			dydil_mat[ni, nj] = sqrt2*C[Cidx]
 		end
@@ -48,23 +48,24 @@ end
 
 
 #=
-	DaubScaling(C::InteriorFilter) -> Vector
+	DaubScaling(IF::InteriorFilter) -> Vector
 
-Compute function values of the scaling function defined by the filter `C` at the integers in the support.
+Compute function values of the scaling function defined by the filter `IF` at the integers in the support.
 =#
-function DaubScaling(C::InteriorFilter)
-	L = dyadic_dil_matrix( coef(C) )
+function DaubScaling(IF::InteriorFilter)
+	if van_moment(IF) == 1
+		return [1.0; 0.0]
+	end
 
-	# Eigenvector of eigenvalue 1
-	E = eigval1(L)
+	C = coef(IF)
+	L = dyadic_dil_matrix( C )
+
+	# Eigenvector of eigenvalue 1: 
+	E = zeros(Float64, length(C))
+	E[2:end-1] = eigval1(L)
 
 	# Normalize scaling function in L2
 	scale!(E, 1/sum(E))
-
-	# The first and last entry are both 0
-	# TODO: Not for Haar
-	# TODO: Don't compute them
-	E[1] = E[end] = 0.0
 
 	return E
 end
