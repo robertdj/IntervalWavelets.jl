@@ -5,7 +5,13 @@ type DaubSupport
 	left::Int64
 	right::Int64
 
-	DaubSupport(left,right) = right <= left ? error("Not an interval") : new(left, right)
+	function DaubSupport(left,right)
+		if left < right
+			new(left, right)
+		else
+			throw(ArgumentError("Not an interval"))
+		end
+	end
 end
 
 left(S::DaubSupport) = S.left
@@ -33,6 +39,14 @@ immutable InteriorFilter
 	van_moment::Int64
 	support::DaubSupport
 	filter::Vector{Float64}
+
+	function InteriorFilter(p, support, filter)
+		if p >= 0
+			new(p, support, filter)
+		else
+			throw(AssertionError("Not a valid interior filter"))
+		end
+	end
 end
 
 function Base.show(io::IO, IF::InteriorFilter)
@@ -87,8 +101,13 @@ immutable BoundaryFilter
 	support::DaubSupport
 	filter::Array{Vector{Float64}}
 
-	# TODO: Checkargs as in Disrtibutions
-	BoundaryFilter(side, p, S, F) = (side == 'L' || side == 'R' ?  new(side, p, S, F) : throw(AssertionError()) )
+	function BoundaryFilter(side, p, S, F)
+		if (side == 'L' || side == 'R') && (2 <= p <= 8)
+			new(side, p, S, F)
+		else
+			throw(AssertionError("Not a valid boundary filter"))
+		end
+	end
 end
 
 left(B::BoundaryFilter) = left(B.support)

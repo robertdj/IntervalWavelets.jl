@@ -34,7 +34,6 @@ end
 # 2D
 
 for p = 2:8
-	@show p
 	for k = 0:2^J-1, l = 0:2^J-1
 		u1 = unit(2^J, k+1)
 		u2 = unit(2^J, l+1)
