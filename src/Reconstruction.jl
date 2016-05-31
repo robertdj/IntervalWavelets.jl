@@ -251,7 +251,7 @@ function IntervalScaling(p::Integer, k::Integer, J::Integer, R::Integer)
 	else
 		BF = bfilter(p,'R')
 		Y = DaubScaling(BF, IF, RmJ)
-		y = vec( Y[Ny-1-k+1,:] )
+		y = vec( Y[Ny-k,:] )
 
 		start_idx = x2index( 1-2.0^-J*(2*p-1), DS, R )
 		end_idx = x2index( 1, DS, R )

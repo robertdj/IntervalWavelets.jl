@@ -40,7 +40,7 @@ end
 
 function van_moment(wavename::AbstractString)
 	lowername = lowercase( wavename )
-	WT.vanishingmoments( WT.eval(parse(lowername)) )
+	WT.vanishingmoments( WT.eval(parse(lowername)) )::Int64
 end
 
 
