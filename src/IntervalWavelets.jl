@@ -26,6 +26,7 @@ export
 	index2x,
 
 	# Scaling functions
+	HaarScaling,
 	DaubScaling,
 
 	# Reconstruction
@@ -38,6 +39,7 @@ include("Filters.jl")
 include("Misc.jl")
 include("DyadicPoints.jl")
 include("Daubechies.jl")
+include("Vectorization.jl")
 include("BoundaryDaubechies.jl")
 include("Quad.jl")
 include("Reconstruction.jl")
