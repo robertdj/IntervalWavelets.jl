@@ -1,0 +1,224 @@
+\documentclass[a4paper]{scrartcl}
+
+% Text
+\usepackage[utf8]{inputenc}
+\usepackage[english]{babel}
+\usepackage[T1]{fontenc}
+
+% Math
+\usepackage{amsmath, amssymb}
+\usepackage{bm}
+	\newcommand{\vv}[1]{\ensuremath{\bm{#1}}}
+	\newcommand\lphi{\ensuremath{\phi^{\text{left}}}}
+	\newcommand\lH{\ensuremath{H^{\text{left}}}}
+	\newcommand\lh{\ensuremath{h^{\text{left}}}}
+
+	\newcommand\rphi{\ensuremath{\phi^{\text{right}}}}
+	\newcommand\rH{\ensuremath{H^{\text{right}}}}
+	\newcommand\rh{\ensuremath{h^{\text{right}}}}
+
+	\newcommand\R{\ensuremath{\mathbb{R}}}
+	\DeclareMathOperator\supp{supp}
+
+\usepackage{graphicx}
+
+\usepackage[colorlinks=true]{hyperref}
+
+\usepackage{cleveref}
+
+\usepackage{biblatex}
+\bibliography{literature.bib}
+
+\title{Daubechies wavelets}
+\author{Robert Dahl Jacobsen}
+
+\begin{document}
+
+\maketitle
+
+The purpose of the Julia package \href{https://github.com/robertdj/IntervalWavelets.jl}{IntervalWavelets.jl} is to compute ordinary Daubechies scaling functions (see e.g.\ \cite{Mallat:2009}) and the moment-preserving boundary scaling functions from \cite{Cohen:Daubechies:Vial:1993}.
+A common approach is to use the inverse discrete wavelet transform on a unit vector in $R^{2^n}$, but this only guarantees a pointwise \emph{approximation} to the scaling functions.
+
+The alternative used here is to rely solely on the recursive definitions as in \cite{Strang:1989}.
+In this short note I summarize these methods with all the details needed in the implementation.
+
+
+\section{Interior scaling functions}
+\label{sec:internal}
+
+A Daubechies scaling function $\phi$ and associated wavelet $\psi$ with $p$ vanishing moments are defined by a filter $\{h_k\}_k$.
+The filter, scaling function and wavelet have supports of the same lengths, and we know from \cite[Theorem 7.5]{Mallat:2009} that if $\supp \{h_k\}_k = [N_1, N_2]$, then 
+\begin{equation*}
+	\supp\phi = [N_1, N_2],
+	\quad
+	\supp\psi = \Bigl[\frac{N_1-N_2+1}2, \frac{N_2-N_1+1}2\Bigr].
+\end{equation*}
+It is customary to let $N_1 = 0$ and $N_2 = 2p-1$.
+However, when constructing the boundary scaling functions we have $N_1 = -p+1$ and $N_2 = p$.
+
+The scaling function satisfies the dilation equation
+\begin{equation}
+	\label{eq:internal_scaling_function_definition}
+	\phi(x) 
+	= \sqrt2 \sum_{k=0}^{2p-1} h_k \phi_k(2x)
+	= \sqrt2 \sum_{k=0}^{2p-1} h_k \phi(2x - k).
+\end{equation}
+For $p\geq2$, $\phi$ is continuous and hence zero at the endpoints of the support.
+These properties allow us to compute $\phi$ at the integer values (in the support).
+As an example, for $p=3$:
+\begin{align*}
+	\frac1{\sqrt2} \phi(1) 
+	& = h_1\phi(1) + h_0\phi(2),
+	\\
+	\frac1{\sqrt2} \phi(2)
+	& = h_4\phi(1) + h_3\phi(2) + h_2\phi(3) + h_1\phi(4),
+	\\
+	\frac1{\sqrt2} \phi(3)
+	& = h_5\phi(1) + h_4\phi(2) + h_3\phi(3) + h_2\phi(4),
+	\\
+	\frac1{\sqrt2} \phi(4)
+	& = h_5\phi(3) + h_4\phi(4).
+\end{align*}
+In matrix form, we have an eigenvalue problem:
+\begin{equation*}
+	\begin{bmatrix}
+		\phi(1) \\ \phi(2) \\ \phi(3) \\ \phi(4)
+	\end{bmatrix}
+	=
+	\sqrt2
+	\begin{bmatrix}
+		h_1 & h_0 & 0 & 0
+		\\
+		h_3 & h_2 & h_1 & h_0
+		\\
+		h_5 & h_4 & h_3 & h_2
+		\\
+		0 & 0 & h_5 & h_4
+	\end{bmatrix}
+	\begin{bmatrix}
+		\phi(1) \\ \phi(2) \\ \phi(3) \\ \phi(4)
+	\end{bmatrix}.
+\end{equation*}
+The $(i,j)$'th entry of the matrix is $\sqrt2 h_{2i-j}$ and the vector $\vv\phi = [\phi(n)]_{n=1}^4$ is an eigenvector of the eigenvalue 1.
+This eigenspace is one-dimensional, so the only question is how to scale $\vv\phi$.
+From e.g.\ \cite[page 69]{Cohen:Daubechies:Vial:1993} we know that
+\begin{equation*}
+	\sum_{k\in\mathbb{Z}} \phi(k)
+	= \sum_{k=0}^{2p-1} \phi(k)
+	= 1.
+\end{equation*}
+
+From the function values at the integers we can compute the function values at the half-integers using \eqref{eq:internal_scaling_function_definition}.
+As an example,
+\begin{equation*}
+	\frac1{\sqrt2} \phi\Bigl(\frac32\Bigr)
+	= h_0 \phi(3) + h_1 \phi(2) + h_2 \phi(1).
+\end{equation*}
+This process can be repeated to recursively yield $\phi(k/2^R)$, for all integers $k$ and positive integers $R$.
+
+Note that the filter $\{h_k\}_k$ defining the scaling function is not unique.
+In \cref{fig:Daubechies4} is shown the usual, minimum-phase Daubechies 4 scaling function along with Daubechies 'symmlet'/linear phase scaling function used in \cref{sec:boundary_Daubechies} and \cite{Cohen:Daubechies:Vial:1993} -- see e.g.\ \cite[Section 7.2.3]{Mallat:2009}.
+
+\begin{figure}
+	\centering
+	\includegraphics[scale=0.5]{interior}
+	\caption{The usual minimum-phase Daubechies 4 scaling function (black) and the symmlet version (red).}
+	\label{fig:Daubechies4}
+\end{figure}
+
+
+\section{Boundary scaling functions}
+\label{sec:boundary_Daubechies}
+
+The moment preserving Daubechies boundary scaling functions were introduced in \cite{Cohen:Daubechies:Vial:1993} and are also described in \cite{Mallat:2009} (albeit with some indexing errors).
+
+An important difference between the internal and boundary scaling functions is that the left (right) boundary scaling functions are \emph{not} continuous at the left (right) endpoint of their support.
+
+As in \cref{sec:internal}, the dilation equations defining the boundary scaling functions can yield function values at all dyadic rationals once we have the function values at the integers (in the support).
+In the subsequent sections the focus is therefore on how to compute these function values at the integers.
+
+The filters used for the boundary scaling functions are available at \url{http://www.pacm.princeton.edu/~ingrid/publications/54.txt} and \url{http://numerical.recipes/contrib}.
+
+
+\subsection{Left boundary scaling functions}
+
+Let $p$ denote the number of vanishing moments and $\phi$ be the interior symmlet Daubechies scaling function associated with the wavelet with $p$ vanishing moments translated such that $\supp\phi = [-p+1, p]$.
+
+We want a family of functions satisfying a multiresolution analysis on $L^2([0,\infty))$ or, equivalently, a dilation equation like \cref{eq:internal_scaling_function_definition}.
+The starting point is $\{\phi_k\}_{k\geq 0}$.
+The functions $\phi_k$ with $\supp\phi_k \subseteq [0,\infty)$ do not need any alteration, but the $\phi_k$ with $\supp\phi_k \cap (-\infty,0) \neq \emptyset$ (i.e., with $0\leq k < p-1$) must be replaced with a corresponding $\lphi_k$.
+It turns out that we should also replace $\phi_{p-1}$ with $\lphi_{p-1}$ in order to keep the number of vanishing moments even though $\supp\phi_{p-1} = [0,2p-1]$.
+The boundary scaling functions are constructed such that $\supp\bigl(\lphi_k\bigr) = [0,p+k]$.
+
+The relevant counterpart to the dilation equation \cref{eq:internal_scaling_function_definition} for interior scaling functions is
+\begin{align}
+	\frac1{\sqrt2} \lphi_k(x)
+	& = \sum_{l=0}^{p-1} \lH_{k,l} \lphi_l(2x) + \sum_{m=p}^{p+2k} \lh_{k,m} \phi_m(2x)
+	\nonumber
+	\\
+	& = \sum_{l=0}^{p-1} \lH_{k,l} \lphi_l(2x) + \sum_{m=p}^{p+2k} \lh_{k,m} \phi(2x-m),
+	\label{eq:left_scaling_function_definition}
+\end{align}
+for $0\leq k\leq p-1$, where $(\lH_{k,l})$ and $(\lh_{k,m})$ are filter coefficients.
+
+For $x=0$, \eqref{eq:left_scaling_function_definition} becomes
+\begin{equation*}
+	\frac1{\sqrt2} \lphi_k(0)
+	= \sum_{l=0}^{p-1} \lH_{k,l} \lphi_l(0)
+\end{equation*}
+and these function values can be found as an eigenvector.
+% As in Section \ref{sec:internal}, we must scale this eigenvector such that the $\lphi_k$'s are normalized in $L^2([0,\infty))$.
+
+At the remaining integers we make use of the compact support.
+Consider e.g.\ the case $p=2$ (where is $\phi$ is supported on $[-1,2]$, $\lphi_0$ is supported on $[0,2]$ and $\lphi_1$ is supported on $[0,3]$):
+\begin{align*}
+	\frac1{\sqrt2} \lphi_0(1)
+	& = \lH_{0,1} \lphi_1(2) + \lh_{0,2} \phi(0),
+	\\
+	\frac1{\sqrt2} \lphi_1(1)
+	& = \lH_{1,1} \lphi_1(2) + \lh_{1,2} \phi(0),
+	\\
+	\frac1{\sqrt2} \lphi_1(2)
+	& = \lh_{1,3} \phi(1) + \lh_{1,4} \phi(0).
+\end{align*}
+From Section \ref{sec:internal} we know how to calculate the internal scaling function and thus the boundary scaling function as well.
+The four boundary scaling functions related to four vanishing moments are seen in \cref{fig:left_Daubechies4}.
+There is a large resemblance between $\lphi_3$ and the symmlet scaling function in \cref{fig:Daubechies4} (here denoted $\phi_4$).
+
+\begin{figure}
+	\centering
+	\includegraphics[scale=0.5]{left}
+	\caption{The left boundary scaling function with 4 vanishing moments.}
+	\label{fig:left_Daubechies4}
+\end{figure}
+
+
+\subsection{Right boundary scaling functions}
+
+Let again $\phi$ denote the interior symmlet Daubechies scaling function and $p$ denote the number of vanishing moments of the associated wavelet.
+The idea for the right boundary scaling functions is the same as for the the left:
+We want a multiresolution analysis on $L^2((-\infty,0])$ by modifiying the interior scaling functions.
+The $\phi_k$ with $\supp\phi_k \subset (-\infty,0)$ are unaltered, but those with $\supp\phi_k \cap [0, \infty) \neq \emptyset$ are replaced by a corresponding $\rphi_k$.
+In conclusion, for $k=0,\ldots,p-1$, the right boundary scaling functions satisfies the dilation equations
+\begin{equation}
+	\label{eq:right_scaling_function_definition}
+	\frac1{\sqrt2} \rphi_k(x)
+	= \sum_{l=0}^{p-1} \rH_{k,l} \rphi_l(2x) + \sum_{m=p}^{p+2k} \rh_{k,m} \phi(2x+m+1),
+\end{equation}
+where $(\rH_{k,l})$ and $(\rh_{k,m})$ are filter coefficients.
+The support of $\rphi_k$ is $[-p-k,0]$.
+
+The four right boundary scaling functions related to four vanishing moments are seen in \cref{fig:right_Daubechies4}.
+
+\begin{figure}
+	\centering
+	\includegraphics[scale=0.5]{right}
+	\caption{The right boundary scaling function with 4 vanishing moments.}
+	\label{fig:right_Daubechies4}
+\end{figure}
+
+
+\printbibliography
+
+\end{document}
+

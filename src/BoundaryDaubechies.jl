@@ -5,10 +5,10 @@ The boundary coefficients collected in a matrix where the `i`'th row
 contains the coefficients of the `i`'th boundary scaling function.
 """->
 function boundary_coef_mat(F::BoundaryFilter)
-	const vm = van_moment(F)
+	vm = van_moment(F)
 	coef_mat = zeros(Float64, vm, vm)
 
-	for row = 1:vm
+	for row in 1:vm
 		coef = bfilter(F, row-1)
 		@inbounds coef_mat[row,:] = sqrt2*coef[1:vm]
 	end
@@ -31,11 +31,11 @@ function DaubScaling(p::Integer, side::Char, R::Integer)
 	return x, Y'
 end
 
-@doc """
+#=
 	DaubScaling(B::BoundaryFilter) -> Vector
 
 Compute the boundary scaling function values at 0.
-"""->
+=#
 function DaubScaling(B::BoundaryFilter)
 	boundary_mat = boundary_coef_mat(B)
 	E = eigval1(boundary_mat)
@@ -44,29 +44,29 @@ function DaubScaling(B::BoundaryFilter)
 	return E
 end
 
-@doc """
+#=
 	DaubScaling(B, I) -> Matrix
 
 Compute the boundary scaling function defined by boundary filter `B` and
-interior filter `F` values at the non-zero integers in their support.
+interior filter `I` at the non-zero integers in their support.
 
 The ouput is a matrix where the `k`'th row are the functions values of the `k-1` scaling function.
-"""->
+=#
 function DaubScaling(B::BoundaryFilter, IF::InteriorFilter)
-	const internal = DaubScaling(IF)
-	const IS = support(IF)
-	const BS = support(B)
+	internal = DaubScaling(IF)
+	IS = support(IF)
+	BS = support(B)
 
 	# Function values at 0
-	const vm = van_moment(B)
-	const xvals = integers(B)
+	vm = van_moment(B)
+	xvals = integers(B)
 	Y = zeros(Float64, vm, length(xvals)+1)
 	Y[:,x2index(0,BS)] = DaubScaling(B)
 
-	const xvals = integers(B)
+	xvals = integers(B)
 	# The translations of the interior scaling function differ for the two sides
-	const interior_start = ( side(B) == 'L' ? vm : -vm-1 )
-	const interior_iter = ( side(B) == 'L' ? 1 : -1 )
+	interior_start = ( side(B) == 'L' ? vm : -vm-1 )
+	interior_iter = ( side(B) == 'L' ? 1 : -1 )
 
 	for x in xvals
 		xindex = x2index(x, BS)
@@ -74,7 +74,6 @@ function DaubScaling(B::BoundaryFilter, IF::InteriorFilter)
 		doublex_index = x2index(doublex, BS)
 
 		for k in 1:vm
-			# TODO: copy! ?
 			filterk = bfilter(B, k-1)
 
 			# Boundary contribution
@@ -104,30 +103,30 @@ end
 @doc """
 	DaubScaling(B, I, R) -> Matrix
 
-Compute the boundary scaling function defined by boundary filter `B` and interiorfilter `I` values at the dyadic rationals up to resolution `R`in their support.
+Compute the boundary scaling function defined by boundary filter `B` and interior filter `I` at the dyadic rationals up to resolution `R` in their support.
 
 The ouput is a matrix where the `k`'th row are the functions values of the `k-1` scaling function.
 """->
 function DaubScaling(B::BoundaryFilter, IF::InteriorFilter, R::Int)
-	@assert R >= 0
+	R >= 0 || throw(DomainError())
 
-	const internal = DaubScaling(IF,R)
-	const Ny = length(internal)
-	const vm = van_moment(B)
+	internal = DaubScaling(IF,R)
+	Ny = length(internal)
+	vm = van_moment(B)
 	Y = zeros(Float64, vm, Ny)
 
-	const IS = support(IF)
-	const BS = support(B)
+	IS = support(IF)
+	BS = support(B)
 
 	# Base level
 	cur_idx = dyadic_rationals(BS, R, 0)
 	Y[:,cur_idx] = DaubScaling(B, IF)
 
-	const interior_start = ( side(B) == 'L' ? vm : -vm-1 )
-	const interior_iter = ( side(B) == 'L' ? 1 : -1 )
+	interior_start = ( side(B) == 'L' ? vm : -vm-1 )
+	interior_iter = ( side(B) == 'L' ? 1 : -1 )
 
 	# Recursion: Fill remaining levels
-	const xvals = dyadic_rationals(BS, R)
+	xvals = dyadic_rationals(BS, R)
 	for L in 1:R
 		# Indices of x values on scale L
 		cur_idx = dyadic_rationals(BS, R, L)
@@ -137,11 +136,9 @@ function DaubScaling(B::BoundaryFilter, IF::InteriorFilter, R::Int)
 			doublex_index = x2index(doublex, BS, R)
 
 			for k in 1:vm
-				# TODO: copy! ?
 				filterk = bfilter(B, k-1)
 
 				# Boundary contribution
-				# TODO: The support depends on k
 				if isinside(doublex, BS)
 					for l in 1:vm
 						Y[k,xindex] += sqrt2 * filterk[l] * Y[l,doublex_index]

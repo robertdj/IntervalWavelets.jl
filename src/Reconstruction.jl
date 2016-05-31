@@ -6,8 +6,8 @@ The functions are evaluated at the dyadic rationals of resolution `res`.
 """->
 function weval(coef::AbstractVector, res::Integer)
 	Ncoef = length(coef)
-	@assert ispow2(Ncoef)
-	@assert (J = Int(log2(Ncoef)) ) <= res
+	ispow2(Ncoef) || throw(AssertionError())
+	(J = Int(log2(Ncoef)) ) <= res || throw(AssertionError())
 
 	# Points in support
 	recon_supp = DaubSupport(0,1)
@@ -38,10 +38,10 @@ Evaluate the coefficients `coef` of the Haar scaling function basis on `[0,1]^2`
 The functions are evaluated at the dyadic rationals of resolution `res`.
 """->
 function weval(coef::AbstractMatrix, res::Integer)
-	@assert res >= 0
-	@assert (Ncoef = size(coef,1)) == size(coef,2)
-	@assert ispow2(Ncoef)
-	@assert ( J = Int(log2(Ncoef)) ) <= res
+	res >= 0 || throw(DomainError())
+	(Ncoef = size(coef,1)) == size(coef,2) || throw(DimensionMismatch())
+	ispow2(Ncoef) || throw(AssertionError())
+	(J = Int(log2(Ncoef)) ) <= res || throw(DomainError())
 
 	recon_supp = DaubSupport(0,1)
 	x = dyadic_rationals(recon_supp, res)
@@ -78,9 +78,9 @@ end
 
 function weval(coef::AbstractVector, p::Integer, R::Integer)
 	Ncoef = length(coef)
-	@assert ispow2(Ncoef)
-	@assert 2 <= p <= 8
-	@assert log2(2*p-1) <= ( J = Int(log2(Ncoef)) ) <= R
+	ispow2(Ncoef) || throw(AssertionError())
+	2 <= p <= 8 || throw(AssertionError())
+	log2(2*p-1) <= ( J = Int(log2(Ncoef)) ) <= R || throw(AssertionError())
 
 	# Collect mother scaling functions
 	PHI = allDaubScaling(p, R-J)
@@ -113,10 +113,10 @@ function weval(coef::AbstractVector, p::Integer, R::Integer)
 end
 
 function weval(coef::AbstractMatrix, p::Integer, R::Integer)
-	@assert (Ncoef = size(coef,1)) == size(coef,2)
-	@assert ispow2(Ncoef)
-	@assert 2 <= p <= 8
-	@assert log2(2*p-1) <= ( J = Int(log2(Ncoef)) ) <= R
+	(Ncoef = size(coef,1)) == size(coef,2) || throw(DimensionMismatch())
+	ispow2(Ncoef) || throw(AssertionError())
+	2 <= p <= 8 || throw(AssertionError())
+	log2(2*p-1) <= ( J = Int(log2(Ncoef)) ) <= R || throw(AssertionError())
 
 	# Collect mother scaling functions
 	PHI = allDaubScaling(p, R-J)
@@ -172,13 +172,12 @@ scaling function.
 function unsafe_DaubScaling!( phi::DenseVector, m::Integer, Φ::DenseMatrix, 
 	twopowJ::Integer, sz::Tuple=size(Φ), p::Integer=div(sz[2]-1,2) )
 
-	# TODO: Let interior be the first
-	if m < p
-		unsafe_copy!( phi, 1, Φ, sz[1]*m+1, sz[1] )
-	elseif m >= twopowJ - p
-		unsafe_copy!( phi, 1, Φ, sz[1]*(sz[2]-twopowJ+m)+1, sz[1] )
-	else
+	if p <= m < twopowJ - p
 		unsafe_copy!( phi, 1, Φ, sz[1]*p+1, sz[1] )
+	elseif m < p
+		unsafe_copy!( phi, 1, Φ, sz[1]*m+1, sz[1] )
+	else
+		unsafe_copy!( phi, 1, Φ, sz[1]*(sz[2]-twopowJ+m)+1, sz[1] )
 	end
 end
 
@@ -192,8 +191,8 @@ order).
 All functions are computed at resolution `R`.
 """->
 function allDaubScaling(p::Integer, R::Integer)
-	@assert 0 <= p <= 8
-	@assert R >= 0
+	1 <= p <= 8 || throw(AssertionError())
+	R >= 0 || throw(DomainError())
 
 	lfilter = bfilter(p, 'L')
 	int_filter = ifilter(p, true)
@@ -205,5 +204,82 @@ function allDaubScaling(p::Integer, R::Integer)
 	rphi = DaubScaling(rfilter, int_filter, R)'
 
 	hcat(lphi, iphi, flipdim(rphi,2))
+end
+
+@doc """
+	IntervalScaling(p::Int, k::Int, J::Int, R::Int) -> x, y
+
+On the interval [0,1] there are 2^J functions at scale `J` ordered such
+that the first `p` are left boundary scaling functions, the last `p` are
+right boundary scaling functions and the middle 2^J-2p are translated
+interior scaling functions.
+
+`IntervalScaling` returns the `k`'th function computed at the dyadic rationals of resolution `R`.
+
+Note that the right boundary scaling functions are ordered differently
+than the output of `DaubScaling`:
+The output of 
+
+	IntervalScaling(p, 2^J, J, R)
+
+is (a translated, dilated and scaled version of) the first column of `Y`
+in
+
+	x, Y = DaubScaling(p, 'R', R)
+"""->
+function IntervalScaling(p::Integer, k::Integer, J::Integer, R::Integer)
+	2 <= p <= 8 || throw(AssertionError())
+	log2(2*p-1) <= J <= R || throw(AssertionError("The scale is too small compared to p or too large compared to R"))
+	0 <= k < (Ny = 2^J) || throw(AssertionError("This interval wavelet does not exist"))
+
+	IF = ifilter(p)
+	RmJ = R - J
+	DS = DaubSupport(0,1)
+	if 0 <= k < p
+		BF = bfilter(p,'L')
+		Y = DaubScaling(BF, IF, RmJ)
+		y = vec( Y[k+1,:] )
+
+		# The indices of the support
+		start_idx = x2index(0, DS, R)
+		end_idx = x2index( 2.0^-J*(2*p-1), DS, R)
+	elseif p <= k < Ny-p
+		y = DaubScaling(IF, RmJ)
+
+		start_idx = x2index( 2.0^-J*(-p+k+1), DS, R )
+		end_idx = x2index( 2.0^-J*(p+k), DS, R )
+	else
+		BF = bfilter(p,'R')
+		Y = DaubScaling(BF, IF, RmJ)
+		y = vec( Y[Ny-k,:] )
+
+		start_idx = x2index( 1-2.0^-J*(2*p-1), DS, R )
+		end_idx = x2index( 1, DS, R )
+	end
+
+	phi = zeros(Float64, 2^R+1)
+	scale!(y, sqrt(Ny))
+	phi[start_idx:end_idx] = y
+
+	return phi
+end
+
+@doc """
+	IntervalScaling(p::Int, J::Int, R::Int) -> matrix
+
+Returns all 2^J scaling functions of scale `J` at resolution `R` on
+[0,1] as a `2^R+1`-by-2^J`.
+
+**Note:** 
+You should probably only use this function for small values of `J`.
+"""->
+function IntervalScaling(p::Integer, J::Integer, R::Integer)
+
+	Y = Array{Float64}(2^R+1, 2^J)
+	for k = 0:2^J-1
+		Y[:,k+1] = IntervalScaling(p, k, J, R)
+	end
+
+	return Y
 end
 

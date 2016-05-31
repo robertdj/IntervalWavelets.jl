@@ -4,8 +4,8 @@
 Approximate the integral of `y` over the the interval `[min(x), max(x)]`, using the divisions in `x`.
 """->
 function trapezquad(x::AbstractVector, y::AbstractVector)
-	@assert 2 <= (Nx = length(x)) == length(y)
-	@assert issorted(x)
+	2 <= (Nx = length(x)) == length(y) || throw(DimensionMismatch())
+	!issorted(x) && throw(AssertionError("x must be sorted"))
 
 	integral = 0.0
 	for n in 2:Nx
