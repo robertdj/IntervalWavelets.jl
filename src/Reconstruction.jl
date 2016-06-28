@@ -1,4 +1,22 @@
 @doc """
+	weval(coef, wavename, res)
+
+Evaluate the coefficients `coef` of the `wavename` scaling function basis on `[0,1]` or `[0,1]^2` (depending on whether `coef` is a vector or a matrix).
+
+The functions are evaluated at the dyadic rationals of resolution `res`.
+"""->
+function weval(coef, wavename::AbstractString, res::Integer)
+	vm = van_moment(wavename)
+	if vm == 1
+		return weval(coef, res)
+	elseif vm >= 2
+		return weval(coef, vm, res)
+	else
+		error()
+	end
+end
+
+@doc """
 	weval(coef::Vector, res::Int) -> Vector
 
 Evaluate the coefficients `coef` of the Haar scaling function basis on `[0,1]`.
