@@ -17,32 +17,37 @@ function weval(coef, wavename::AbstractString, res::Integer)
 end
 
 @doc """
-	weval(coef::Vector, res::Int) -> Vector
+	weval(coef::Vector, res::Int, supp) -> x, y
 
-Evaluate the coefficients `coef` of the Haar scaling function basis on `[0,1]`.
+Evaluate the coefficients `coef` of the Haar scaling function basis on the DaubSupport interval `supp`.
 The functions are evaluated at the dyadic rationals of resolution `res`.
 """->
-function weval(coef::AbstractVector, res::Integer)
+function weval(coef::AbstractVector, res::Integer, supp::DaubSupport)
 	Ncoef = length(coef)
-	ispow2(Ncoef) || throw(AssertionError())
-	(J = Int(log2(Ncoef)) ) <= res || throw(AssertionError())
+	lsupp = length(supp)
+	Jpow = div(Ncoef, lsupp)
+	Ncoef == lsupp * Jpow || throw(AssertionError())
+	ispow2(Jpow) || throw(AssertionError())
+	(J = Int(log2(Jpow)) ) <= res || throw(AssertionError())
 
 	# Points in support
-	recon_supp = DaubSupport(0,1)
-	x = dyadic_rationals(recon_supp, res)
+	x = dyadic_rationals(supp, res)
 
-	dilation = 1/Ncoef
+	dilation = 1/Jpow
 	sqrt_dil = sqrt(dilation)
 	y = zeros(x)
 
-	for k in 0:Ncoef-1
+	translations = L*Jpow + (0:Ncoef-1)
+	coef_idx = 0
+	for k in translations
 		# The indices of the x's in the support of phi_{J,k}
-		start_idx = x2index( dilation*k, recon_supp, res )
-		end_idx = x2index( dilation*(k+1), recon_supp, res )
+		start_idx = x2index( dilation*k, supp, res )
+		end_idx = x2index( dilation*(k+1), supp, res )
 
+		coef_idx+=1
 		@inbounds for nx in start_idx:end_idx
 			phi = HaarScaling(x[nx]/dilation - k) / sqrt_dil
-			y[nx] += coef[k+1]*phi
+			y[nx] += coef[coef_idx]*phi
 		end
 	end
 
