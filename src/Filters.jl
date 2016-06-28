@@ -83,7 +83,8 @@ for func in [:support, :van_moment]
 	end
 end
 
-coef(C::InteriorFilter) = C.filter
+# Returns a copy; otherwise e.g. scale!(coef(C), 2) will modify C.filter
+coef(C::InteriorFilter) = copy(C.filter)
 
 function Base.length(C::InteriorFilter)
 	length(coef(C))
