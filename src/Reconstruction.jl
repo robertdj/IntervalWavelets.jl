@@ -294,7 +294,7 @@ You should probably only use this function for small values of `J`.
 function IntervalScaling(p::Integer, J::Integer, R::Integer)
 
 	Y = Array{Float64}(2^R+1, 2^J)
-	for k = 0:2^J-1
+	for k in 0:2^J-1
 		Y[:,k+1] = IntervalScaling(p, k, J, R)
 	end
 
