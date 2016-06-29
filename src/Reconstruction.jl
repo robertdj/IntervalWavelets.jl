@@ -105,39 +105,40 @@ end
 
 # ------------------------------------------------------------------------
 
-function weval(coef::AbstractVector, p::Integer, R::Integer)
+function weval(coef::AbstractVector, p::Integer, R::Integer, supp::DaubSupport)
 	Ncoef = length(coef)
-	ispow2(Ncoef) || throw(AssertionError())
+	lsupp = length(supp)
+	Jpow = div(Ncoef, lsupp)
+	Ncoef == lsupp * Jpow || throw(AssertionError())
+	ispow2(Jpow) || throw(AssertionError())
 	2 <= p <= 8 || throw(AssertionError())
-	log2(2*p-1) <= ( J = Int(log2(Ncoef)) ) <= R || throw(AssertionError())
+	log2( (2p-1)/lsupp ) <= ( J = Int(log2(Jpow)) ) <= R || throw(AssertionError())
 
 	# Collect mother scaling functions
 	PHI = allDaubScaling(p, R-J)
-	sqrt_dil = sqrt(Ncoef)
-	scale!(PHI, sqrt_dil)
+	scale!(PHI, sqrt(Jpow))
 
 	# Allocate output and temporary array
-	y = zeros(2^R + 1)
+	x = dyadic_rationals(supp, R)
+	y = zeros(x)
 	Nphi = size(PHI,1)
 	phi = Array{Float64}(Nphi)
 
 	# Translation with 1 is a fixed number of indices
-	kinc = x2index( 1/Ncoef, DaubSupport(0,1), R ) - 1
+	kinc = x2index( left(supp)+1/Jpow, supp, R ) - 1
 	slice_idx = 1:Nphi
 
 	sz = size(PHI)
-	for k in 0:Ncoef-1
+	for k in 1:Ncoef
 		unsafe_DaubScaling!(phi, k, PHI, Ncoef, sz, p)
 
-		if p <= k <= Ncoef - p
+		if p < k <= Ncoef - p + 1
 			slice_idx += kinc
 		end
 		z = slice(y, slice_idx)
-		BLAS.axpy!( coef[k+1], phi, z )
+		BLAS.axpy!( coef[k], phi, z )
 	end
 
-	recon_supp = DaubSupport(0,1)
-	x = dyadic_rationals(recon_supp, R)
 	return x, y
 end
 
@@ -199,14 +200,14 @@ are the right scaling functions and the middle column is the interior
 scaling function.
 """->
 function unsafe_DaubScaling!( phi::DenseVector, m::Integer, Φ::DenseMatrix, 
-	twopowJ::Integer, sz::Tuple=size(Φ), p::Integer=div(sz[2]-1,2) )
+	Ncoef::Integer, sz::Tuple=size(Φ), p::Integer=div(sz[2]-1,2) )
 
-	if p <= m < twopowJ - p
+	if p < m <= Ncoef - p
 		unsafe_copy!( phi, 1, Φ, sz[1]*p+1, sz[1] )
-	elseif m < p
-		unsafe_copy!( phi, 1, Φ, sz[1]*m+1, sz[1] )
+	elseif m <= p
+		unsafe_copy!( phi, 1, Φ, sz[1]*(m-1)+1, sz[1] )
 	else
-		unsafe_copy!( phi, 1, Φ, sz[1]*(sz[2]-twopowJ+m)+1, sz[1] )
+		unsafe_copy!( phi, 1, Φ, sz[1]*(sz[2]-Ncoef+m-1)+1, sz[1] )
 	end
 end
 
