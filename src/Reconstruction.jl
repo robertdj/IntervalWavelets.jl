@@ -142,43 +142,45 @@ function weval(coef::AbstractVector, p::Integer, R::Integer, supp::DaubSupport)
 	return x, y
 end
 
-function weval(coef::AbstractMatrix, p::Integer, R::Integer)
+function weval(coef::AbstractMatrix, p::Integer, R::Integer, supp::DaubSupport)
 	(Ncoef = size(coef,1)) == size(coef,2) || throw(DimensionMismatch())
-	ispow2(Ncoef) || throw(AssertionError())
+	lsupp = length(supp)
+	Jpow = div(Ncoef, lsupp)
+	Ncoef == lsupp * Jpow || throw(AssertionError())
+	ispow2(Jpow) || throw(AssertionError())
 	2 <= p <= 8 || throw(AssertionError())
-	log2(2*p-1) <= ( J = Int(log2(Ncoef)) ) <= R || throw(AssertionError())
+	log2( (2p-1)/lsupp ) <= ( J = Int(log2(Jpow)) ) <= R || throw(AssertionError())
 
 	# Collect mother scaling functions
 	PHI = allDaubScaling(p, R-J)
-	sqrt_dil = sqrt(Ncoef)
-	scale!(PHI, sqrt_dil)
+	scale!(PHI, sqrt(Jpow))
 
 	# Allocate output and temporary arrays 
-	y = zeros(2^R+1, 2^R+1)
+	x = dyadic_rationals(supp, R)
+	Nx = length(x)
+	y = zeros(Float64, Nx, Nx)
 	Nphi = size(PHI,1)
 	phi = Array{Float64}(Nphi, Nphi)
 	phix = Array{Float64}(Nphi)
 	phiy = similar(phix)
 
 	# Translation is a fixed number of indices
-	kinc = x2index( 1/Ncoef, DaubSupport(0,1), R ) - 1
+	kinc = x2index( left(supp)+1/Jpow, supp, R ) - 1
 
 	slicex_idx = 1:Nphi
 	sz = size(PHI)
-	for kx in 0:Ncoef-1
-		if p <= kx <= Ncoef - p
+	for kx in 1:Ncoef
+		unsafe_DaubScaling!(phix, kx, PHI, Ncoef, sz, p)
+		if p < kx <= Ncoef - p + 1
 			slicex_idx += kinc
 		end
 
-		unsafe_DaubScaling!(phix, kx, PHI, Ncoef, sz, p)
 		slicey_idx = 1:Nphi
-		for ky in 0:Ncoef-1
+		for ky in 1:Ncoef
 			unsafe_DaubScaling!(phiy, ky, PHI, Ncoef, sz, p)
-			for j in 1:sz[1], i in 1:sz[1]
-				@inbounds phi[i,j] = phiy[i] * phix[j]
-			end
+			A_mul_Bc!(phi, phiy, phix)
 
-			if p <= ky <= Ncoef - p
+			if p < ky <= Ncoef - p + 1
 				slicey_idx += kinc
 			end
 
