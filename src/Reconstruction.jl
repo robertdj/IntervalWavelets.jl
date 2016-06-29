@@ -5,7 +5,7 @@ Evaluate the coefficients `coef` of the `wavename` scaling function basis on `[0
 
 The functions are evaluated at the dyadic rationals of resolution `res`.
 """->
-function weval(coef, wavename::AbstractString, res::Integer)
+function weval(coef, wavename::AbstractString, res::Integer, supp::DaubSupport=DaubSupport(-1,1))
 	vm = van_moment(wavename)
 	if vm == 1
 		return weval(coef, res)
@@ -33,11 +33,11 @@ function weval(coef::AbstractVector, res::Integer, supp::DaubSupport)
 	# Points in support
 	x = dyadic_rationals(supp, res)
 
-	dilation = 1/Jpow
+	dilation = 2.0^(-J)
 	sqrt_dil = sqrt(dilation)
 	y = zeros(x)
 
-	translations = L*Jpow + (0:Ncoef-1)
+	translations = left(supp)*Jpow + (0:Ncoef-1)
 	coef_idx = 0
 	for k in translations
 		# The indices of the x's in the support of phi_{J,k}
@@ -57,37 +57,43 @@ end
 @doc """
 	weval(coef::Matrix, res::Int) -> Matrix
 
-Evaluate the coefficients `coef` of the Haar scaling function basis on `[0,1]^2`.
+Evaluate the coefficients `coef` of the Haar scaling function basis on the DaubSupport interval `supp`.
 The functions are evaluated at the dyadic rationals of resolution `res`.
 """->
-function weval(coef::AbstractMatrix, res::Integer)
-	res >= 0 || throw(DomainError())
+function weval(coef::AbstractMatrix, res::Integer, supp::DaubSupport)
 	(Ncoef = size(coef,1)) == size(coef,2) || throw(DimensionMismatch())
-	ispow2(Ncoef) || throw(AssertionError())
-	(J = Int(log2(Ncoef)) ) <= res || throw(DomainError())
+	lsupp = length(supp)
+	Jpow = div(Ncoef, lsupp)
+	Ncoef == lsupp * Jpow || throw(AssertionError())
+	ispow2(Jpow) || throw(AssertionError())
+	(J = Int(log2(Jpow)) ) <= res || throw(DomainError())
 
-	recon_supp = DaubSupport(0,1)
-	x = dyadic_rationals(recon_supp, res)
+	x = dyadic_rationals(supp, res)
 
 	Nx = length(x)
 	y = zeros(Float64, Nx, Nx)
 	dilation = 2.0^(-J)
 	sqrt_dil = sqrt(dilation)
 
-	for ky in 0:Ncoef-1
-		starty_idx = x2index( dilation*ky, recon_supp, res )
-		endy_idx = x2index( dilation*(ky+1), recon_supp, res )
+	translations = left(supp)*Jpow + (0:Ncoef-1)
+	coefy_idx = 0
+	for ky in translations
+		starty_idx = x2index( dilation*ky, supp, res )
+		endy_idx = x2index( dilation*(ky+1), supp, res )
 
-		for kx in 0:Ncoef-1
-			startx_idx = x2index( dilation*kx, recon_supp, res )
-			endx_idx = x2index( dilation*(kx+1), recon_supp, res )
+		coefy_idx += 1
+		coefx_idx = 0
+		for kx in translations
+			startx_idx = x2index( dilation*kx, supp, res )
+			endx_idx = x2index( dilation*(kx+1), supp, res )
 
+			coefx_idx += 1
 			for nx in startx_idx:endx_idx
 				@inbounds phix = HaarScaling(x[nx]/dilation - kx) / sqrt_dil
 
 				@inbounds for ny in starty_idx:endy_idx
 					phiy = HaarScaling(x[ny]/dilation - ky) / sqrt_dil
-					y[ny,nx] += coef[ky+1,kx+1] * phix * phiy
+					y[ny,nx] += coef[coefy_idx,coefx_idx] * phix * phiy
 				end
 			end
 		end
