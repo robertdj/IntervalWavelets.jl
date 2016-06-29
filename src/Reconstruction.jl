@@ -8,9 +8,9 @@ The functions are evaluated at the dyadic rationals of resolution `res`.
 function weval(coef, wavename::AbstractString, res::Integer, supp::DaubSupport=DaubSupport(-1,1))
 	vm = van_moment(wavename)
 	if vm == 1
-		return weval(coef, res)
+		return weval(coef, res, supp)
 	elseif vm >= 2
-		return weval(coef, vm, res)
+		return weval(coef, vm, res, supp)
 	else
 		error()
 	end
