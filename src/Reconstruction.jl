@@ -5,7 +5,7 @@ Evaluate the coefficients `coef` of the `wavename` scaling function basis on `[0
 
 The functions are evaluated at the dyadic rationals of resolution `res`.
 """->
-function weval(coef, wavename::AbstractString, res::Integer, supp::DaubSupport=DaubSupport(-1,1))
+function weval(coef, wavename::AbstractString, res::Integer, supp::DaubSupport=DaubSupport(0,1))
 	vm = van_moment(wavename)
 	if vm == 1
 		return weval(coef, res, supp)
@@ -187,7 +187,7 @@ function weval(coef::AbstractMatrix, p::Integer, R::Integer, supp::DaubSupport)
 			z = slice(y, slicey_idx, slicex_idx)
 			# BLAS.axpy! is using *a lot* of memory
 			for j in 1:Nphi, i in 1:Nphi
-				@inbounds z[i,j] += coef[ky+1,kx+1] * phi[i,j]
+				@inbounds z[i,j] += coef[ky,kx] * phi[i,j]
 			end
 		end
 	end

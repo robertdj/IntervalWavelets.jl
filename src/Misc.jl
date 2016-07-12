@@ -1,3 +1,7 @@
+function unit(x::AbstractVector, entry::Integer)
+	unit(eltype(x), length(x), entry)
+end
+
 function unit(length::Integer, entry::Integer)
 	unit(Float64, length, entry)
 end
