@@ -21,7 +21,7 @@ DS = DaubSupport(0,1)
 for p = 2:8
 	for k = 0:2^J-1
 		u = unit(2^J, k+1)
-		xrecon, yrecon = weval(u, p, R)
+		xrecon, yrecon = weval(u, p, R, DaubSupport(0,1))
 
 		y = IntervalScaling(p, k, J, R)
 		#@show k, norm(yrecon - y)
@@ -34,6 +34,7 @@ end
 # 2D
 
 for p = 2:8
+	p = 2
 	# The tests pass for for all l and k, but takes forever w/o inlining
 	k = rand( [0:2^J-1;] )
 	l = rand( [0:2^J-1;] )
@@ -41,7 +42,7 @@ for p = 2:8
 	u1 = unit(2^J, k+1)
 	u2 = unit(2^J, l+1)
 	U = u1*u2'
-	yrecon = weval(U, p, R)
+	yrecon = weval(U, p, R, DaubSupport(0,1))
 
 	y1 = IntervalScaling(p, k, J, R)
 	y2 = IntervalScaling(p, l, J, R)
