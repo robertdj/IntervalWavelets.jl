@@ -67,11 +67,11 @@ Returns `true` if `x` is inside `S`.
 isinside(x, S::DaubSupport) = left(S) <= x <= right(S)
 
 # Convert between values and indices of a vector with the integers in the support S
-x2index(x::Integer, S::DaubSupport) = x + 1 - left(S)
-index2x(idx::Integer, S::DaubSupport) = idx - 1 + left(S)
+@inline x2index(x::Integer, S::DaubSupport) = x + 1 - left(S)
+@inline index2x(idx::Integer, S::DaubSupport) = idx - 1 + left(S)
 
 # Convert between values and indices of a vector with dyadic rationals
 # at resolution R in the support S
-x2index(x, S::DaubSupport, R::Integer) = Int( (x-left(S))*2^R ) + 1
-index2x(idx::Integer, S::DaubSupport, R::Integer) = (idx - 1)*2.0^(-R) + left(S)
+@inline x2index(x, S::DaubSupport, R::Integer) = Int( (x-left(S))*2^R ) + 1
+@inline index2x(idx::Integer, S::DaubSupport, R::Integer) = (idx - 1)*2.0^(-R) + left(S)
 
