@@ -64,7 +64,7 @@ end
 
 Returns `true` if `x` is inside `S`.
 """->
-isinside(x, S::DaubSupport) = left(S) <= x <= right(S)
+@inline isinside(x, S::DaubSupport) = left(S) <= x <= right(S)
 
 # Convert between values and indices of a vector with the integers in the support S
 @inline x2index(x::Integer, S::DaubSupport) = x + 1 - left(S)
