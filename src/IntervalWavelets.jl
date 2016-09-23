@@ -1,6 +1,8 @@
 module IntervalWavelets
 
 using Compat
+import Compat: view, String
+
 import Wavelets: wavelet, WT
 
 export

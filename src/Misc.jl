@@ -42,7 +42,7 @@ function eigval1(A::DenseMatrix{Float64})
 	return vecs[:,eval1_index[]]
 end
 
-function van_moment(wavename::AbstractString)
+function van_moment(wavename::String)
 	lowername = lowercase( wavename )
 	WT.vanishingmoments( WT.eval(parse(lowername)) )::Int64
 end
@@ -53,7 +53,7 @@ end
 
 The support of the Daubechies scaling function `wavename`.
 """->
-function support(wavename::AbstractString)
+function support(wavename::String)
 	vm = van_moment(wavename)
 	return DaubSupport(-vm+1, vm)
 end

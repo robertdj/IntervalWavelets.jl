@@ -6,7 +6,7 @@ basis `supp` (depending on whether `coef` is a vector or a matrix).
 
 The functions are evaluated at the dyadic rationals of resolution `res`.
 """->
-function weval(coef::AbstractVector, wavename::AbstractString, res::Integer, supp::Interval=Interval(-0.5, 0.5))
+function weval(coef, wavename::String, res::Integer, supp::Interval=Interval(-0.5, 0.5))
 
 	supp_length = length(supp)
 	isinteger(supp_length) || throw(DomainError())
@@ -14,22 +14,16 @@ function weval(coef::AbstractVector, wavename::AbstractString, res::Integer, sup
 
 	vm = van_moment(wavename)
 	if vm == 1
-		x, y = weval(coef, res, S)
+		y = weval(coef, res, S)
 	elseif vm >= 2
-		x, y = weval(coef, vm, res, S)
+		y = weval(coef, vm, res, S)
 	end
 
-	return x + left(supp), y
-end
-
-function weval(coef::AbstractMatrix, wavename::AbstractString, res::Integer, supp::Interval=DaubSupport(0,1))
-
-	vm = van_moment(wavename)
-	if vm == 1
-		return weval(coef, res, supp)
-	elseif vm >= 2
-		return weval(coef, vm, res, supp)
-	end
+    if length(y) == 2
+        return y[1] + left(supp), y[2]
+    else
+        return y
+    end
 end
 
 @doc """
@@ -151,7 +145,7 @@ function weval(coef::AbstractVector, p::Integer, R::Integer, supp::DaubSupport)
 		if p < k <= Ncoef - p + 1
 			slice_idx += kinc
 		end
-		z = slice(y, slice_idx)
+		z = view(y, slice_idx)
 		BLAS.axpy!( coef[k], phi, z )
 	end
 
@@ -200,7 +194,7 @@ function weval(coef::AbstractMatrix, p::Integer, R::Integer, supp::DaubSupport)
 				slicey_idx += kinc
 			end
 
-			z = slice(y, slicey_idx, slicex_idx)
+			z = view(y, slicey_idx, slicex_idx)
 			# BLAS.axpy! is using *a lot* of memory
 			for j in 1:Nphi, i in 1:Nphi
 				@inbounds z[i,j] += coef[ky,kx] * phi[i,j]
