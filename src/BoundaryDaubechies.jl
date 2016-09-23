@@ -61,7 +61,7 @@ function DaubScaling(B::BoundaryFilter, IF::InteriorFilter)
 	vm = van_moment(B)
 	xvals = integers(B)
 	Y = zeros(Float64, vm, length(xvals)+1)
-	Y[:,x2index(0,BS)] = DaubScaling(B)
+	Y[:, x2index(0,BS)] = DaubScaling(B)
 
 	xvals = integers(B)
 	# The translations of the interior scaling function differ for the two sides
@@ -79,7 +79,7 @@ function DaubScaling(B::BoundaryFilter, IF::InteriorFilter)
 			# Boundary contribution
 			if isinside(doublex, BS)
 				for l in 1:vm
-					Y[k,xindex] += sqrt2 * filterk[l] * Y[l,doublex_index]
+					Y[k, xindex] += sqrt2 * filterk[l] * Y[l, doublex_index]
 				end
 			end
 

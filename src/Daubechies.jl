@@ -16,7 +16,7 @@ end
 
 A Daubechies `p` scaling function evaluated in the dyadic rationals at resolution `R`.
 """->
-function DaubScaling(p::Int, R::Integer, symmlet::Bool=true)
+function DaubScaling(p::Integer, R::Integer, symmlet::Bool=true)
 	IF = ifilter(p, symmlet)
 	supp = support(IF)
 	x = dyadic_rationals(supp, R)
@@ -76,21 +76,20 @@ end
 Compute function values of the scaling function defined by the filter
 `C` at the dyadic rationals of resolution `R` in the support.
 """->
-function DaubScaling(C::InteriorFilter, R::Integer)
-	supp = support(C)
+function DaubScaling(IF::InteriorFilter, R::Integer)
+	supp = support(IF)
 	# There are 2^R points on each unit + endpoint
 	Nx = length(supp)*2^R + 1
 	phi = zeros(Float64, Nx)
 
 	# Base level
-	cur_idx = dyadic_rationals( supp, R, 0)
-	phi[cur_idx] = DaubScaling(C)
+	cur_idx = dyadic_rationals(supp, R, 0)
+	phi[cur_idx] = DaubScaling(IF)
 
 	# Recursion: Fill remaining levels
-	coeff = coef(C)
+	coeff = coef(IF)
 	Lsupp = left(supp)
 	Rsupp = right(supp)
-	NC = length(C)
 	for L in 1:R
 		# Indices of x values on scale L
 		cur_idx = dyadic_rationals(supp, R, L)

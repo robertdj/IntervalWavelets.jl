@@ -1,36 +1,3 @@
-@doc """
-The support of a Daubechies scaling function.
-"""->
-type DaubSupport
-	left::Int64
-	right::Int64
-
-	function DaubSupport(left,right)
-		if left < right
-			new(left, right)
-		else
-			throw(ArgumentError("Not an interval"))
-		end
-	end
-end
-
-left(S::DaubSupport) = S.left
-right(S::DaubSupport) = S.right
-Base.length(S::DaubSupport) = right(S) - left(S)
-Base.(:+)(S::DaubSupport, k::Integer) = DaubSupport(left(S)+k, right(S)+k)
-
-function Base.intersect(S1::DaubSupport, S2::DaubSupport)
-	if left(S1) >= right(S2) || left(S2) >= right(S1)
-		return Void
-	end
-
-	L = max( left(S1), left(S2) )
-	R = min( right(S1), right(S2) )
-
-	DaubSupport(L, R)
-end
-
-
 # ------------------------------------------------------------
 # Functions and types for interacting with interior filters
 
