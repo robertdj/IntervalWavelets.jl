@@ -1,53 +1,50 @@
-type DyadicRational
-	numerator::Int64
-	denominator::Int64
-	resolution::Int64
-	float::Float64
+# ------------------------------------------------------------
+# Intervals 
 
-	function DyadicRational(numerator, denominator, resolution, float)
-		if resolution >= 0 && isequal(numerator/denominator, float) &&
-			denominator == 2^resolution
-			new(numerator, denominator, resolution, float)
+type Interval{T<:Real}
+	left::T
+	right::T
+
+	function Interval(left, right)
+		if left < right
+			new(left, right)
 		else
-			throw(ArgumentError("Not a valid dyadic rational"))
+			throw(ArgumentError("Not an interval"))
 		end
 	end
 end
 
-DyadicRational(numerator::Integer, resolution::Integer) = DyadicRational(numerator, 2^resolution, resolution)
-DyadicRational(numerator::Integer, denominator::Integer, resolution::Integer) = DyadicRational(numerator, denominator, resolution, numerator/denominator)
+function Interval(left, right)
+	left, right = promote(left, right)
+	T = typeof(left)
+	Interval{T}(left, right)
+end
 
-DyadicRational(x::Integer) = DyadicRational(x, 1, 0, float(x))
-function DyadicRational(x::Real)
-	num = x
-	R = 0
-	prec = precision(x)
-	while !isinteger(num)
-		if R >= prec
-			throw(DomainError("Input is not a dyadic rational"))
-		end
+typealias DaubSupport Interval{Int64}
 
-		R += 1
-		num *= 2
+@inline left(I::Interval) = I.left
+@inline right(I::Interval) = I.right
+Base.length(I::Interval) = right(I) - left(I)
+@compat Base.:+(S::DaubSupport, k::Integer) = DaubSupport(left(S)+k, right(S)+k)
+
+
+function Base.intersect(I1::Interval, I2::Interval)
+	if left(I1) >= right(I2) || left(I2) >= right(I1)
+		return Void
 	end
 
-	DyadicRational(num, 2^R, R, x)
+	L = max( left(I1), left(I2) )
+	R = min( right(I1), right(I2) )
+
+	DaubSupport(L, R)
 end
 
-for name in [:+, :-]
-	@eval begin
-		Base.$name(x::DyadicRational, y::DyadicRational) = DyadicRational( $name(x.float, y.float) )
-	end
-end
-Base.isless(x::DyadicRational, y::DyadicRational) = isless(x.float, y.float)
 
-function Base.show(io::IO, x::DyadicRational)
-	show(io, x.float)
-end
-
+# ------------------------------------------------------------
+# Vectors on DaubSupport
 
 @doc """
-	dyadic_rationals(I::DaubSupport, R::Int) -> Vector
+	dyadic_rationals(I::DaubSupport, R) -> Vector
 
 The dyadic rationals of resolution `R` in the interval `I`.
 """->
@@ -57,10 +54,10 @@ function dyadic_rationals(I::DaubSupport, R::Integer)
 end
 
 @doc """
-	dyadic_rationals(I::DaubSupport, res, level) -> Vector
+	dyadic_rationals(I::DaubSupport, R, level) -> Vector
 
-In a vector of dyadic rationals up to resolution `res` in `I`,
-return the indices of those at exactly `level`.
+In a vector of dyadic rationals up to resolution `R` in `I`,
+return the **indices** of those at exactly `level`.
 """->
 function dyadic_rationals(I::DaubSupport, R::Integer, level::Integer)
 	0 <= level <= R || throw(DomainError())

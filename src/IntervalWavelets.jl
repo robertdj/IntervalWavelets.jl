@@ -1,10 +1,12 @@
 module IntervalWavelets
 
+using Compat
 import Wavelets: wavelet, WT
 
 export
 	# Types
 	DaubSupport,
+	Interval,
 	InteriorFilter,
 	BoundaryFilter,
 
@@ -35,9 +37,9 @@ export
 
 const sqrt2 = sqrt(2)
 
+include("DyadicPoints.jl")
 include("Filters.jl")
 include("Misc.jl")
-include("DyadicPoints.jl")
 include("Daubechies.jl")
 include("Vectorization.jl")
 include("BoundaryDaubechies.jl")
