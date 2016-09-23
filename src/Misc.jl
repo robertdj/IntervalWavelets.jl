@@ -42,7 +42,7 @@ function eigval1(A::DenseMatrix{Float64})
 	return vecs[:,eval1_index[]]
 end
 
-function van_moment(wavename::AbstractString)
+function van_moment(wavename::String)
 	lowername = lowercase( wavename )
 	WT.vanishingmoments( WT.eval(parse(lowername)) )::Int64
 end
@@ -53,7 +53,7 @@ end
 
 The support of the Daubechies scaling function `wavename`.
 """->
-function support(wavename::AbstractString)
+function support(wavename::String)
 	vm = van_moment(wavename)
 	return DaubSupport(-vm+1, vm)
 end
@@ -64,7 +64,7 @@ end
 
 Returns `true` if `x` is inside `S`.
 """->
-isinside(x, S::DaubSupport) = left(S) <= x <= right(S)
+@inline isinside(x, S::DaubSupport) = left(S) <= x <= right(S)
 
 # Convert between values and indices of a vector with the integers in the support S
 @inline x2index(x::Integer, S::DaubSupport) = x + 1 - left(S)
