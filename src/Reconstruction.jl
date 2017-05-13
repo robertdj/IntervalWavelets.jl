@@ -1,11 +1,11 @@
-@doc """
+"""
 weval(coef, wavename, res[, supp])
 
 Evaluate the coefficients `coef` of the `wavename` scaling function
 basis `supp` (depending on whether `coef` is a vector or a matrix).
 
 The functions are evaluated at the dyadic rationals of resolution `res`.
-"""->
+"""
 function weval(coef, wavename::String, res::Integer, supp::Interval=Interval(-0.5, 0.5))
 
 	supp_length = length(supp)
@@ -26,12 +26,12 @@ function weval(coef, wavename::String, res::Integer, supp::Interval=Interval(-0.
     end
 end
 
-@doc """
+"""
 	weval(coef::Vector, res::Int, supp) -> x, y
 
 Evaluate the coefficients `coef` of the Haar scaling function basis on the DaubSupport interval `supp`.
 The functions are evaluated at the dyadic rationals of resolution `res`.
-"""->
+"""
 function weval(coef::AbstractVector, res::Integer, supp::DaubSupport)
 	Ncoef = length(coef)
 	lsupp = length(supp)
@@ -64,12 +64,12 @@ function weval(coef::AbstractVector, res::Integer, supp::DaubSupport)
 	return x, y
 end
 
-@doc """
+"""
 	weval(coef::Matrix, res::Int) -> Matrix
 
 Evaluate the coefficients `coef` of the Haar scaling function basis on the DaubSupport interval `supp`.
 The functions are evaluated at the dyadic rationals of resolution `res`.
-"""->
+"""
 function weval(coef::AbstractMatrix, res::Integer, supp::DaubSupport)
 	(Ncoef = size(coef,1)) == size(coef,2) || throw(DimensionMismatch())
 	lsupp = length(supp)
@@ -205,12 +205,12 @@ function weval(coef::AbstractMatrix, p::Integer, R::Integer, supp::DaubSupport)
 	return y
 end
 
-@doc """
+"""
 Overwrite `phi` with the `m`'th scaling function from a matrix `Φ` where 
 the first `p` columns are the left scaling functions, the last `p` columns 
 are the right scaling functions and the middle column is the interior
 scaling function.
-"""->
+"""
 function unsafe_DaubScaling!( phi::DenseVector, m::Integer, Φ::DenseMatrix, 
 	Ncoef::Integer, sz::Tuple=size(Φ), p::Integer=div(sz[2]-1,2) )
 
@@ -223,7 +223,7 @@ function unsafe_DaubScaling!( phi::DenseVector, m::Integer, Φ::DenseMatrix,
 	end
 end
 
-@doc """
+"""
 	allDaubScaling(p::Integer, R::Integer)
 
 Collect the `p` left scaling functions, the interior scaling function
@@ -231,7 +231,7 @@ and the `p` right scaling functions as columns in a matrix (in that
 order).
 
 All functions are computed at resolution `R`.
-"""->
+"""
 function allDaubScaling(p::Integer, R::Integer)
 	1 <= p <= 8 || throw(AssertionError())
 	R >= 0 || throw(DomainError())
@@ -248,7 +248,7 @@ function allDaubScaling(p::Integer, R::Integer)
 	hcat(lphi, iphi, flipdim(rphi,2))
 end
 
-@doc """
+"""
 	IntervalScaling(p::Int, k::Int, J::Int, R::Int) -> x, y
 
 On the interval [0,1] there are 2^J functions at scale `J` ordered such
@@ -268,7 +268,7 @@ is (a translated, dilated and scaled version of) the first column of `Y`
 in
 
 	x, Y = DaubScaling(p, 'R', R)
-"""->
+"""
 function IntervalScaling(p::Integer, k::Integer, J::Integer, R::Integer)
 	2 <= p <= 8 || throw(AssertionError())
 	log2(2*p-1) <= J <= R || throw(AssertionError("The scale is too small compared to p or too large compared to R"))
@@ -306,7 +306,7 @@ function IntervalScaling(p::Integer, k::Integer, J::Integer, R::Integer)
 	return phi
 end
 
-@doc """
+"""
 	IntervalScaling(p::Int, J::Int, R::Int) -> matrix
 
 Returns all 2^J scaling functions of scale `J` at resolution `R` on
@@ -314,7 +314,7 @@ Returns all 2^J scaling functions of scale `J` at resolution `R` on
 
 **Note:** 
 You should probably only use this function for small values of `J`.
-"""->
+"""
 function IntervalScaling(p::Integer, J::Integer, R::Integer)
 
 	Y = Array{Float64}(2^R+1, 2^J)

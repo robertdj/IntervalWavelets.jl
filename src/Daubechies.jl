@@ -1,21 +1,21 @@
 # ------------------------------------------------------------
 # Scaling functions
 
-@doc """
+"""
 	HaarScaling( xi[, J, k] ) -> Float
 
 The Haar scaling function evaluated in `xi` at level `J` and translation `k`.
 By default, `J=0` and `k=0`.
-"""->
-function HaarScaling(xi::Real)
+"""
+function HaarScaling(xi)
 	zero(xi) <= xi < one(xi) ? 1.0 : 0.0
 end
 
-@doc """
+"""
 	DaubScaling(p, R) -> x, y
 
 A Daubechies `p` scaling function evaluated in the dyadic rationals at resolution `R`.
-"""->
+"""
 function DaubScaling(p::Integer, R::Integer, symmlet::Bool=true)
 	IF = ifilter(p, symmlet)
 	supp = support(IF)
@@ -25,12 +25,12 @@ function DaubScaling(p::Integer, R::Integer, symmlet::Bool=true)
 	return x, phi
 end
 
-@doc """
+"""
 	dyadic_dil_matrix(C::Vector) -> Matrix
 
 The "dyadic dilation matrix" `D` of the filter `C`: 
 `D[i,j] = C[2i-j]`.
-"""->
+"""
 function dyadic_dil_matrix(C::Vector{Float64})
 	NC = length(C)
 	sz = NC - 2
@@ -70,12 +70,12 @@ function DaubScaling(IF::InteriorFilter)
 	return E
 end
 
-@doc """
+"""
 	DaubScaling(C::InteriorFilter, R::Int) -> Vector
 
 Compute function values of the scaling function defined by the filter
 `C` at the dyadic rationals of resolution `R` in the support.
-"""->
+"""
 function DaubScaling(IF::InteriorFilter, R::Integer)
 	supp = support(IF)
 	# There are 2^R points on each unit + endpoint

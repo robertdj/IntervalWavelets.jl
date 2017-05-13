@@ -22,7 +22,7 @@ function Base.show(io::IO, IF::InteriorFilter)
 	show(io, IF.filter)
 end
 
-@doc """
+"""
 	ifilter(p::Int)
 
 Internal Daubechies filter with `p` vanishing moments with the **normal** filters.
@@ -31,7 +31,7 @@ Internal Daubechies filter with `p` vanishing moments with the **normal** filter
 
 Internal Daubechies filter with `p` vanishing moments with the symmlet filters.
 This is the default.
-"""->
+"""
 function ifilter(p::Integer, symmlet::Bool=true)
 	p < 1 && throw(DomainError())
 
@@ -94,11 +94,11 @@ function Base.show(io::IO, B::BoundaryFilter)
 	end
 end
 
-@doc """
+"""
 	integers(B::BoundaryFilter)
 
 The non-zero integers in the support of the boundary scaling function with filter `B`.
-"""->
+"""
 function integers(B::BoundaryFilter)
 	if side(B) == 'L'
 		return right(support(B)):-1:1
@@ -108,14 +108,14 @@ function integers(B::BoundaryFilter)
 	end
 end
 
-@doc """
+"""
 	bfilter(p::Int, boundary::Char) -> BoundaryFilter
 
 Return the boundary filters for the scaling functions with `p` vanishing moments.
 `N` can be between 2 and 8.
 
 `boundary` is either `'L'` or `'R'`.
-"""->
+"""
 function bfilter(p::Integer, boundary::Char)
 	2 <= p <= 8 || throw(AssertionError())
 
@@ -128,40 +128,40 @@ function bfilter(p::Integer, boundary::Char)
 	end
 end
 
-@doc """
+"""
 	bfilter(BoundaryFilter, k::Int) -> Vector
 
 Return the boundary filter for the `k`'th scaling function (0 <= `k` < the number of vanishing moments).
-"""->
+"""
 function bfilter(B::BoundaryFilter, k::Int)
 	0 <= k < van_moment(B) || throw(DomainError())
 	return B.filter[k+1]
 end
 
 
-@doc """
+"""
 	van_moment(F::BoundaryFilter) -> Integer
 
 Return the number of vanishing moments of the boundary scaling functions defined by `F`.
-"""->
+"""
 function van_moment(F::BoundaryFilter)
 	return F.van_moment
 end
 
-@doc """
+"""
 	support(B::BoundaryFilter)
 
 Union of the supports of the boundary scaling functions defined by the filters `B`.
-"""->
+"""
 function support(B::BoundaryFilter)
 	B.support
 end
 
-@doc """
+"""
 	support(B::BoundaryFilter, k)
 
 Support of the `k`'th boundary scaling function defined by the filters `B`.
-"""->
+"""
 function support(B::BoundaryFilter, k::Integer)
 	0 <= k < (vm = van_moment(B)) || throw(DomainError())
 	if B.side == 'L'

@@ -43,22 +43,22 @@ end
 # ------------------------------------------------------------
 # Vectors on DaubSupport
 
-@doc """
+"""
 	dyadic_rationals(I::DaubSupport, R) -> Vector
 
 The dyadic rationals of resolution `R` in the interval `I`.
-"""->
+"""
 function dyadic_rationals(I::DaubSupport, R::Integer)
 	R >= 0 || throw(DomainError())
 	return left(I):2.0^(-R):right(I)
 end
 
-@doc """
+"""
 	dyadic_rationals(I::DaubSupport, R, level) -> Vector
 
 In a vector of dyadic rationals up to resolution `R` in `I`,
 return the **indices** of those at exactly `level`.
-"""->
+"""
 function dyadic_rationals(I::DaubSupport, R::Integer, level::Integer)
 	0 <= level <= R || throw(DomainError())
 
@@ -73,11 +73,11 @@ function dyadic_rationals(I::DaubSupport, R::Integer, level::Integer)
 	end
 end
 
-@doc """
+"""
 	isuniform(x::AbstractVector) -> Bool
 
 Test if the elements in `x` increments with the same amount (with sign).
-"""->
+"""
 function isuniform(x::AbstractVector)
 	(Nx = length(x)) > 1 || throw(DomainError())
 	Nx == 2 && return true

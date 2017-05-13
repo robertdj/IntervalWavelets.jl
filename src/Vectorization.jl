@@ -1,5 +1,3 @@
-@vectorize_1arg Real HaarScaling
-
 function HaarScaling(xi::AbstractArray, J::Int, k::Int)
 	y = Array{Float64}(size(xi))
 	for idx in eachindex(xi)

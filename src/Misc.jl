@@ -12,12 +12,12 @@ function unit(T::Type, length::Integer, entry::Integer)
 	return u
 end
 
-@doc """
+"""
 	eigval1(A::Matrix) -> Vector
 
 Returns a unit eigenvector of `A` for the eigenvalue 1 if this eigenspace is 1D.
 Otherwise, return an error.
-"""->
+"""
 function eigval1(A::DenseMatrix{Float64})
 	E = eigfact(A)
 	# Types are hardcoded; otherwise instability occurs
@@ -48,30 +48,34 @@ function van_moment(wavename::String)
 end
 
 
-@doc """
+"""
 	support(wavename) -> DaubSupport
 
 The support of the Daubechies scaling function `wavename`.
-"""->
+"""
 function support(wavename::String)
 	vm = van_moment(wavename)
 	return DaubSupport(-vm+1, vm)
 end
 
 
-@doc """
+"""
 	isinside(x, S::DaubSupport) -> Bool
 
 Returns `true` if `x` is inside `S`.
-"""->
+"""
 @inline isinside(x, S::DaubSupport) = left(S) <= x <= right(S)
 
-# Convert between values and indices of a vector with the integers in the support S
+"""
+Convert between values and indices of a vector with the integers in the support S
+"""
 @inline x2index(x::Integer, S::DaubSupport) = x + 1 - left(S)
 @inline index2x(idx::Integer, S::DaubSupport) = idx - 1 + left(S)
 
-# Convert between values and indices of a vector with dyadic rationals
-# at resolution R in the support S
+"""
+Convert between values and indices of a vector with dyadic rationals
+at resolution R in the support S
+"""
 @inline x2index(x, S::DaubSupport, R::Integer) = Int( (x-left(S))*2^R ) + 1
 @inline index2x(idx::Integer, S::DaubSupport, R::Integer) = (idx - 1)*2.0^(-R) + left(S)
 

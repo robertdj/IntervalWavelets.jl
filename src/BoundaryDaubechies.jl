@@ -1,9 +1,9 @@
-@doc """
+"""
 	boundary_coef_mat(F::BoundaryFilter) -> Matrix
 
 The boundary coefficients collected in a matrix where the `i`'th row
 contains the coefficients of the `i`'th boundary scaling function.
-"""->
+"""
 function boundary_coef_mat(F::BoundaryFilter)
 	vm = van_moment(F)
 	coef_mat = zeros(Float64, vm, vm)
@@ -16,11 +16,11 @@ function boundary_coef_mat(F::BoundaryFilter)
 	return coef_mat
 end
 
-@doc """
+"""
 	DaubScaling(p::Integer, side::Char, R::Integer) -> x, Y
 
 Compute the boundary scaling function at resolution `R` on `side` with `p` vanishing moments.
-"""->
+"""
 function DaubScaling(p::Integer, side::Char, R::Integer)
 	B = bfilter(p, side)
 	IF = ifilter(p, true)
@@ -100,13 +100,13 @@ function DaubScaling(B::BoundaryFilter, IF::InteriorFilter)
 	return Y
 end
 
-@doc """
+"""
 	DaubScaling(B, I, R) -> Matrix
 
 Compute the boundary scaling function defined by boundary filter `B` and interior filter `I` at the dyadic rationals up to resolution `R` in their support.
 
 The ouput is a matrix where the `k`'th row are the functions values of the `k-1` scaling function.
-"""->
+"""
 function DaubScaling(B::BoundaryFilter, IF::InteriorFilter, R::Int)
 	R >= 0 || throw(DomainError())
 
