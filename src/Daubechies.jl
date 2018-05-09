@@ -26,24 +26,23 @@ function DaubScaling(p::Integer, R::Integer, symmlet::Bool=true)
 end
 
 """
-	dyadic_dil_matrix(C::Vector) -> Matrix
+	dyadic_dilation_matrix(h::InteriorFilter)
 
-The "dyadic dilation matrix" `D` of the filter `C`: 
-`D[i,j] = C[2i-j]`.
+Compute the matrix whose eigenvalues is the wavelet values at the
+integers in its support.
+See the `doc` folder.
 """
-function dyadic_dil_matrix(C::Vector{Float64})
-	NC = length(C)
-	sz = NC - 2
-	dydil_mat = zeros(Float64, sz, sz)
+function dyadic_dilation_matrix(h::InteriorFilter)
+	sz = length(h) - 2
+	ddmat = zeros(Float64, sz, sz)
+	# The lower bound of the support
+	l = support(h)[1]
 
-	for nj in 1:sz, ni in 1:sz
-		Cidx = 2*ni - nj + 1
-		if 1 <= Cidx <= NC
-			dydil_mat[ni, nj] = sqrt2*C[Cidx]
-		end
+	for j in 1:sz, i in 1:sz
+		ddmat[i, j] = sqrt2*h[2*i - j + l]
 	end
 
-	return dydil_mat
+	return ddmat
 end
 
 
@@ -52,22 +51,24 @@ end
 
 Compute function values of the scaling function defined by the filter `IF` at the integers in the support.
 =#
-function DaubScaling(IF::InteriorFilter)
-	if van_moment(IF) == 1
+function DaubScaling(h::InteriorFilter)
+	# Haar wavelet. Not covered in dyadic_dilation_matrix because there
+	# are no integers in the interior of the support
+	if van_moment(h) == 1
 		return [1.0; 0.0]
 	end
 
-	C = coef(IF)
-	L = dyadic_dil_matrix( C )
+	# Non-zero function values
+	support_idx = support(h)
+	E = OffsetVector(zeros(Float64, length(h)), support_idx)
 
-	# Eigenvector of eigenvalue 1: 
-	E = zeros(Float64, length(C))
-	E[2:end-1] = eigval1(L)
+	nonzero_idx = support_idx[2]:support_idx[end-1]
+	E[nonzero_idx] = h |> 
+		dyadic_dilation_matrix |> 
+		eigval1 |> 
+		x -> scale!(x, 1/sum(x)) # Normalize scaling function in L2
 
-	# Normalize scaling function in L2
-	scale!(E, 1/sum(E))
-
-	return E
+	return DyadicRationalsVector(0, E)
 end
 
 """
