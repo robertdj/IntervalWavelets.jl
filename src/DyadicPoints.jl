@@ -1,4 +1,80 @@
 # ------------------------------------------------------------
+# Dyadic rationals
+
+"""
+The value at the `k`'th index of Dyadic Rationals Vector of resolution 
+`R` is the value of the vector/function at k/2^R.
+"""
+struct DyadicRationalsVector
+	resolution::Int64
+	values::OffsetVector{Float64, Vector{Float64}}
+
+	# TODO: Check if resolution match length of values
+	function DyadicRationalsVector(res, values) 
+		if res < 0
+			throw(DomainError("Resolution must be non-negative"))
+		else
+			new(res, values)
+		end
+	end
+end
+
+function DyadicRationalsVector(res, lower, upper)
+	DyadicRationalsVector(
+		res,
+		OffsetVector(zeros(upper-lower+1), lower:upper)
+		)
+end
+
+values(y::DyadicRationalsVector) = y.values
+
+lower(y::DyadicRationalsVector) = linearindices(values(y))[1]
+upper(y::DyadicRationalsVector) = linearindices(values(y))[end]
+function is_in_support(k::Int64, y::DyadicRationalsVector)
+	lower(y) <= k <= upper(y)
+end
+
+# TODO: checkindex instead of checkbounds?
+function Base.checkbounds(y::DyadicRationalsVector, idx)
+	checkbounds(y.values, idx)
+end
+
+function Base.getindex(y::DyadicRationalsVector, idx::Int)
+	checkbounds(y, idx)
+	y.values[idx]
+end
+
+function (y::DyadicRationalsVector)(k::Int64)
+	if is_in_support(k, y)
+		return values(y)[k]
+	else
+		return 0
+	end
+end
+
+function index(y::DyadicRationalsVector)
+	#= linspace(lower(y), upper(y), 2^y.res) =#
+	lower(y):2.0^(-y.resolution):upper(y)
+end
+
+function Base.collect(y::DyadicRationalsVector)
+	#= return x, y =#
+end
+
+function (y::DyadicRationalsVector)(k::Int64, res::Int64)
+	if res < 0 
+		error("Resolution must be non-negative")
+	end
+		
+	if res > y.resolution
+		error("Resolution is too large")
+	end
+
+	y(k*2^(y.resolution - res))
+end
+
+
+# ------------------------------------------------------------
 # Intervals 
 
 type Interval{T<:Real}
@@ -20,7 +96,7 @@ function Interval(left, right)
 	Interval{T}(left, right)
 end
 
-typealias DaubSupport Interval{Int64}
+const DaubSupport = Interval{Int64}
 
 @inline left(I::Interval) = I.left
 @inline right(I::Interval) = I.right
