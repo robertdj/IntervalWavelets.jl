@@ -56,6 +56,14 @@ function Base.collect(y::DyadicRationalsVector)
 	return x, yvals
 end
 
+# Make a `plot` function for DyadicRationalsVector using the Plots package
+@recipe function f(y::DyadicRationalsVector)
+	# linecolor --> :black
+	seriestype := :path
+
+	x, yvals = collect(y)
+end
+
 
 # ------------------------------------------------------------
 # Intervals 
