@@ -17,12 +17,8 @@ end
 A Daubechies `p` scaling function evaluated in the dyadic rationals at resolution `R`.
 """
 function DaubScaling(p::Integer, R::Integer, symmlet::Bool=true)
-	IF = ifilter(p, symmlet)
-	supp = support(IF)
-	x = dyadic_rationals(supp, R)
-	phi = DaubScaling( IF, R )
-
-	return x, phi
+	h = ifilter(p, symmlet)
+	DaubScaling(h, R)
 end
 
 """
@@ -35,7 +31,7 @@ See the `doc` folder.
 function dyadic_dilation_matrix(h::InteriorFilter)
 	sz = length(h) - 2
 	ddmat = zeros(Float64, sz, sz)
-	# The min_index bound of the support
+	# The lower bound of the support
 	l = support(h)[1]
 
 	for j in 1:sz, i in 1:sz
@@ -46,16 +42,17 @@ function dyadic_dilation_matrix(h::InteriorFilter)
 end
 
 
-#=
-	DaubScaling(IF::InteriorFilter) -> Vector
+"""
+	DaubScaling(h::InteriorFilter)
 
-Compute function values of the scaling function defined by the filter `IF` at the integers in the support.
-=#
+Compute function values of the scaling function defined by the filter `h` at 
+the integers in the support.
+"""
 function DaubScaling(h::InteriorFilter)
 	# Haar wavelet. Not covered in dyadic_dilation_matrix because there
 	# are no integers in the interior of the support
 	if van_moment(h) == 1
-		return DyadicRationalsVector(0, [1.0; 0.0])
+		return DyadicRationalsVector(0, OffsetVector([1.0; 0.0], 0:1))
 	end
 
 	support_idx = support(h)
@@ -75,34 +72,33 @@ end
 Increase the resolution of the DaubScaling scaling function by one.
 """
 function DaubScaling(y::DyadicRationalsVector, h::InteriorFilter)
-	#= @show L = length(y) + (max_index(y) - min_index(y))*2^y.resolution =#
-	y_indexvalues = indexvalues(y)
-	y_min_index = Int(y_indexvalues[1])
-	y_max_index = Int(y_indexvalues[end])
+	y_support = support(y)
+	y_min_support = Int(y_support[1])
+	y_max_support = Int(y_support[end])
+	y_indices = linearindices(y)
 
-	yy_length = 1 + (y_max_index - y_min_index) * 2^(resolution(y)+1)
+	z_length = 1 + (y_max_support - y_min_support) * 2^(resolution(y)+1)
+	z_min_index = 2*y_indices[1]
+	z_max_index = 2*y_indices[end]
+	z = OffsetVector(zeros(z_length), z_min_index:z_max_index)
 
-	yy = OffsetVector(zeros(yy_length), 2*min_index(y):2*max_index(y))
-
-	yindex = min_index(y):max_index(y)
-
-	i = 2*min_index(y) - 1
-	while i < 2*max_index(y)
+	zidx = z_min_index - 1
+	while zidx < z_max_index
 		# Even indices
-		i += 1
-		yy[i] = y[div(i, 2)]
+		zidx += 1
+		z[zidx] = y[div(zidx, 2)]
 		
 		# Odd indices
-		i += 1
-		for k in support(h)
-			j = i - k * 2^resolution(y)
-			if checkindex(Bool, yindex, j)
-				yy[i] += sqrt2 * h[k] * y[j]
+		zidx += 1
+		for hidx in support(h)
+			yidx = zidx - hidx * 2^resolution(y)
+			if checkindex(Bool, y_indices, yidx)
+				z[zidx] += sqrt2 * h[hidx] * y[yidx]
 			end
 		end
 	end
 
-	DyadicRationalsVector(y.resolution+1, yy)
+	DyadicRationalsVector(resolution(y)+1, z)
 end
 
 """
