@@ -35,7 +35,7 @@ See the `doc` folder.
 function dyadic_dilation_matrix(h::InteriorFilter)
 	sz = length(h) - 2
 	ddmat = zeros(Float64, sz, sz)
-	# The lower bound of the support
+	# The min_index bound of the support
 	l = support(h)[1]
 
 	for j in 1:sz, i in 1:sz
@@ -55,20 +55,54 @@ function DaubScaling(h::InteriorFilter)
 	# Haar wavelet. Not covered in dyadic_dilation_matrix because there
 	# are no integers in the interior of the support
 	if van_moment(h) == 1
-		return [1.0; 0.0]
+		return DyadicRationalsVector(0, [1.0; 0.0])
 	end
 
-	# Non-zero function values
 	support_idx = support(h)
-	E = OffsetVector(zeros(Float64, length(h)), support_idx)
+	y = OffsetVector(zeros(Float64, length(h)), support_idx)
 
+	# Non-zero function values
 	nonzero_idx = support_idx[2]:support_idx[end-1]
-	E[nonzero_idx] = h |> 
+	y[nonzero_idx] = h |> 
 		dyadic_dilation_matrix |> 
 		eigval1 |> 
 		x -> scale!(x, 1/sum(x)) # Normalize scaling function in L2
 
-	return DyadicRationalsVector(0, E)
+	return DyadicRationalsVector(0, y)
+end
+
+"""
+Increase the resolution of the DaubScaling scaling function by one.
+"""
+function DaubScaling(y::DyadicRationalsVector, h::InteriorFilter)
+	#= @show L = length(y) + (max_index(y) - min_index(y))*2^y.resolution =#
+	y_indexvalues = indexvalues(y)
+	y_min_index = Int(y_indexvalues[1])
+	y_max_index = Int(y_indexvalues[end])
+
+	yy_length = 1 + (y_max_index - y_min_index) * 2^(resolution(y)+1)
+
+	yy = OffsetVector(zeros(yy_length), 2*min_index(y):2*max_index(y))
+
+	yindex = min_index(y):max_index(y)
+
+	i = 2*min_index(y) - 1
+	while i < 2*max_index(y)
+		# Even indices
+		i += 1
+		yy[i] = y[div(i, 2)]
+		
+		# Odd indices
+		i += 1
+		for k in support(h)
+			j = i - k * 2^resolution(y)
+			if checkindex(Bool, yindex, j)
+				yy[i] += sqrt2 * h[k] * y[j]
+			end
+		end
+	end
+
+	DyadicRationalsVector(y.resolution+1, yy)
 end
 
 """

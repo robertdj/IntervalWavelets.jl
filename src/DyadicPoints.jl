@@ -3,9 +3,10 @@
 
 """
 The value at the `k`'th index of Dyadic Rationals Vector of resolution 
-`R` is the value of the vector/function at k/2^R.
+`R` is k/2^R.
 """
 struct DyadicRationalsVector
+	# TODO: values should be any abstract vector?
 	resolution::Int64
 	values::OffsetVector{Float64, Vector{Float64}}
 
@@ -19,59 +20,72 @@ struct DyadicRationalsVector
 	end
 end
 
-function DyadicRationalsVector(res, lower, upper)
-	DyadicRationalsVector(
-		res,
-		OffsetVector(zeros(upper-lower+1), lower:upper)
-		)
+function Base.show(io::IO, y::DyadicRationalsVector)
+	println(io, "Dyadic rationals vector of resolution ", resolution(y),
+			" and indices ", linearindices(values(y)))
+	idx = index(Int, y)
+	println(io, idx[1], "/2^", resolution(y), ", ..., ", idx[end], "/2^", resolution(y))
+	show(io, values(y))
 end
 
 values(y::DyadicRationalsVector) = y.values
-
-lower(y::DyadicRationalsVector) = linearindices(values(y))[1]
-upper(y::DyadicRationalsVector) = linearindices(values(y))[end]
-function is_in_support(k::Int64, y::DyadicRationalsVector)
-	lower(y) <= k <= upper(y)
-end
+resolution(y::DyadicRationalsVector) = y.resolution
 
 # TODO: checkindex instead of checkbounds?
+# TODO: Necessray?
 function Base.checkbounds(y::DyadicRationalsVector, idx)
-	checkbounds(y.values, idx)
+	checkbounds(values(y), idx)
 end
 
-function Base.getindex(y::DyadicRationalsVector, idx::Int)
-	checkbounds(y, idx)
-	y.values[idx]
+# TODO: @inline?
+function Base.getindex(y::DyadicRationalsVector, idx)
+	#= checkbounds(y, idx) =#
+	@inbounds values(y)[idx]
 end
 
-function (y::DyadicRationalsVector)(k::Int64)
-	if is_in_support(k, y)
-		return values(y)[k]
-	else
-		return 0
-	end
+function Base.setindex!(y::DyadicRationalsVector, val, idx)
+	#= checkbounds(y, idx) =#
+	@inbounds values(y)[idx] = val
 end
 
-function index(y::DyadicRationalsVector)
-	#= linspace(lower(y), upper(y), 2^y.res) =#
-	lower(y):2.0^(-y.resolution):upper(y)
+function Base.length(y::DyadicRationalsVector)
+	y |> 
+		values |> 
+		linearindices |>
+		length
+end
+
+min_index(y::DyadicRationalsVector) = linearindices(values(y))[1]
+max_index(y::DyadicRationalsVector) = linearindices(values(y))[end]
+
+Base.linearindices(y::DyadicRationalsVector) = linearindices(values(y))
+#= Base.linearindices(y::DyadicRationalsVector) = linearindices(y.values) =#
+function indices(y::DyadicRationalsVector)
+	min_index(y):max_index(y)
+end
+
+function indexvalues(y::DyadicRationalsVector)
+	2.0^(-y.resolution) * linearindices(y)
 end
 
 function Base.collect(y::DyadicRationalsVector)
-	#= return x, y =#
+	x = indexvalues(y)
+	yy = y.values.parent
+
+	return x, yy
 end
 
-function (y::DyadicRationalsVector)(k::Int64, res::Int64)
-	if res < 0 
-		error("Resolution must be non-negative")
-	end
+#= function (y::DyadicRationalsVector)(k::Int64, res::Int64) =#
+#= 	if res < 0 =# 
+#= 		error("Resolution must be non-negative") =#
+#= 	end =#
 		
-	if res > y.resolution
-		error("Resolution is too large")
-	end
+#= 	if res > y.resolution =#
+#= 		error("Resolution is too large") =#
+#= 	end =#
 
-	y(k*2^(y.resolution - res))
-end
+#= 	y(k*2^(y.resolution - res)) =#
+#= end =#
 
 
 # ------------------------------------------------------------
