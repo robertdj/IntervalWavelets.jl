@@ -82,18 +82,20 @@ function DaubScaling(y::DyadicRationalsVector, h::InteriorFilter)
 	z_max_index = 2*y_indices[end]
 	z = OffsetVector(zeros(z_length), z_min_index:z_max_index)
 
-	zidx = z_min_index - 1
-	while zidx < z_max_index
+	# The even indices are inherited from the input. The odd indices are
+	# computed using the recursive formula
+	zi = z_min_index - 1
+	while zi < z_max_index
 		# Even indices
-		zidx += 1
-		z[zidx] = y[div(zidx, 2)]
+		zi += 1
+		z[zi] = y[div(zi, 2)]
 		
 		# Odd indices
-		zidx += 1
-		for hidx in support(h)
-			yidx = zidx - hidx * 2^resolution(y)
-			if checkindex(Bool, y_indices, yidx)
-				z[zidx] += sqrt2 * h[hidx] * y[yidx]
+		zi += 1
+		for hi in support(h)
+			yi = zi - hi * 2^resolution(y)
+			if checkindex(Bool, y_indices, yi)
+				z[zi] += sqrt2 * h[hi] * y[yi]
 			end
 		end
 	end
