@@ -106,39 +106,13 @@ function DaubScaling(y::DyadicRationalsVector, h::InteriorFilter)
 end
 
 """
-	DaubScaling(C::InteriorFilter, R::Int) -> Vector
-
-Compute function values of the scaling function defined by the filter
-`C` at the dyadic rationals of resolution `R` in the support.
+Compute the scaling function defined by the filter `h` at the dyadic
+rationals of resolution `R`.
 """
-function DaubScaling(IF::InteriorFilter, R::Integer)
-	supp = support(IF)
-	# There are 2^R points on each unit + endpoint
-	Nx = length(supp)*2^R + 1
-	phi = zeros(Float64, Nx)
-
-	# Base level
-	cur_idx = dyadic_rationals(supp, R, 0)
-	phi[cur_idx] = DaubScaling(IF)
-
-	# Recursion: Fill remaining levels
-	coeff = coef(IF)
-	Lsupp = left(supp)
-	Rsupp = right(supp)
-	for L in 1:R
-		# Indices of x values on scale L
-		cur_idx = dyadic_rationals(supp, R, L)
-
-		for xindex in cur_idx
-			twox = 2*index2x( xindex, supp, R )
-
-			for k in Lsupp:Rsupp
-				if isinside(twox-k, supp)
-					twox_index = x2index( twox-k, supp, R )
-					phi[xindex] += sqrt2 * coeff[k-Lsupp+1] * phi[twox_index]
-				end
-			end
-		end
+function DaubScaling(h::InteriorFilter, R::Int)
+	phi = DaubScaling(h)
+	for res in 1:R
+		phi = DaubScaling(phi, h)
 	end
 
 	return phi
