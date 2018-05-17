@@ -1,14 +1,13 @@
 # ------------------------------------------------------------
 # Functions and types for interacting with interior filters
 
-immutable InteriorFilter
+struct InteriorFilter
 	van_moment::Int64
-	support::DaubSupport
-	filter::Vector{Float64}
+	filter::OffsetVector{Float64, Vector{Float64}}
 
-	function InteriorFilter(p, support, filter)
+	function InteriorFilter(p, filter)
 		if p >= 0
-			new(p, support, filter)
+			new(p, filter)
 		else
 			throw(AssertionError("Not a valid interior filter"))
 		end
@@ -17,9 +16,17 @@ end
 
 function Base.show(io::IO, IF::InteriorFilter)
 	S = support(IF)
-	println(io, "Filter for Daubechies ", van_moment(IF), " scaling function on [", left(S), ", ", right(S), "]:")
+	println(io, "Filter for Daubechies ", van_moment(IF), " scaling function on [", S[1], ", ", S[end], "]:")
 
 	show(io, IF.filter)
+end
+
+function Base.getindex(h::InteriorFilter, idx::Int)
+	if checkbounds(Bool, h.filter, idx)
+		return h.filter[idx]
+	else
+		return 0.0
+	end
 end
 
 """
@@ -36,27 +43,20 @@ function ifilter(p::Integer, symmlet::Bool=true)
 	p < 1 && throw(DomainError())
 
 	if symmlet && 1 < p <= 8
-		return InteriorFilter(p, DaubSupport(-p+1,p), INTERIOR_FILTERS[p])
+		filter = OffsetArray(INTERIOR_FILTERS[p], -p+1:p)
 	else
-		return InteriorFilter(p, DaubSupport(0,2*p-1), wavelet(WT.Daubechies{p}()).qmf)
+		filter = OffsetArray(wavelet(WT.Daubechies{p}()).qmf, 0:2*p-1)
 	end
-end
 
-for func in [:support, :van_moment]
-	@eval begin
-		function $func(C::InteriorFilter)
-			C.$func
-		end
-	end
+	return InteriorFilter(p, filter)
 end
 
 # Returns a copy; otherwise e.g. scale!(coef(C), 2) will modify C.filter
 coef(C::InteriorFilter) = copy(C.filter)
 
-function Base.length(C::InteriorFilter)
-	length(coef(C))
-end
-
+van_moment(C::InteriorFilter) = C.van_moment
+support(C::InteriorFilter) = linearindices(C.filter)
+Base.length(C::InteriorFilter) = length(support(C))
 
 
 # ------------------------------------------------------------

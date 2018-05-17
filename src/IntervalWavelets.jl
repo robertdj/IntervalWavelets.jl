@@ -1,8 +1,10 @@
 module IntervalWavelets
 
+using OffsetArrays
 using Compat
-import Compat: view, String
+using Plots
 
+import Compat: view, String
 import Wavelets: wavelet, WT
 
 export
@@ -22,6 +24,7 @@ export
 	bfilter,
 
 	# Dyadic rationals
+	DyadicRationalsVector,
 	dyadic_rationals,
 	isuniform,
 	x2index,

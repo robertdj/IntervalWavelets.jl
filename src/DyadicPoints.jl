@@ -1,4 +1,71 @@
 # ------------------------------------------------------------
+# Dyadic rationals
+
+"""
+The value at the `k`'th index of Dyadic Rationals Vector of resolution 
+`R` is k/2^R.
+"""
+struct DyadicRationalsVector
+	# TODO: values should be any abstract vector?
+	resolution::Int64
+	parent::OffsetVector{Float64, Vector{Float64}}
+
+	# TODO: Check if resolution match length of values
+	function DyadicRationalsVector(res, values) 
+		if res < 0
+			throw(DomainError("Resolution must be non-negative"))
+		else
+			new(res, values)
+		end
+	end
+end
+
+function Base.show(io::IO, y::DyadicRationalsVector)
+	println(io, "Dyadic rationals vector of resolution ", resolution(y),
+			" and indices ", linearindices(parent(y)))
+	show(io, parent(y))
+end
+
+Base.parent(y::DyadicRationalsVector) = y.parent
+resolution(y::DyadicRationalsVector) = y.resolution
+
+Base.linearindices(y::DyadicRationalsVector) = linearindices(parent(y))
+
+@inline function Base.getindex(y::DyadicRationalsVector, idx)
+	parent(y)[idx]
+end
+
+@inline function Base.setindex!(y::DyadicRationalsVector, val, idx)
+	parent(y)[idx] = val
+end
+
+function Base.length(y::DyadicRationalsVector)
+	y |> 
+		linearindices |>
+		length
+end
+
+function support(y::DyadicRationalsVector)
+	2.0^(-y.resolution) * linearindices(y)
+end
+
+function Base.collect(y::DyadicRationalsVector)
+	x = support(y)
+	yvals = y |> parent |> parent
+
+	return x, yvals
+end
+
+# Make a `plot` function for DyadicRationalsVector using the Plots package
+@recipe function f(y::DyadicRationalsVector)
+	# linecolor --> :black
+	seriestype := :path
+
+	x, yvals = collect(y)
+end
+
+
+# ------------------------------------------------------------
 # Intervals 
 
 type Interval{T<:Real}
@@ -20,7 +87,7 @@ function Interval(left, right)
 	Interval{T}(left, right)
 end
 
-typealias DaubSupport Interval{Int64}
+const DaubSupport = Interval{Int64}
 
 @inline left(I::Interval) = I.left
 @inline right(I::Interval) = I.right
