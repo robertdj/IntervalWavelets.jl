@@ -1,9 +1,34 @@
 # ------------------------------------------------------------
+# Functions and types for general filters
+
+struct Filter
+	coefficients::OffsetVector{Float64, Vector{Float64}}
+end
+
+# Returns a copy; otherwise e.g. scale! will modify h.coefficients
+coefficients(h::Filter) = copy(h.coefficients)
+support(h::Filter) = linearindices(h.coefficients)
+Base.length(h::Filter) = h |> support |> length
+
+function Base.show(io::IO, h::Filter)
+	show(io, coefficients(h))
+end
+
+function Base.getindex(h::Filter, idx::Int)
+	if checkbounds(Bool, h.coefficients, idx)
+		return h.coefficients[idx]
+	else
+		return 0.0
+	end
+end
+
+
+# ------------------------------------------------------------
 # Functions and types for interacting with interior filters
 
 struct InteriorFilter
 	van_moment::Int64
-	filter::OffsetVector{Float64, Vector{Float64}}
+	filter::Filter
 
 	function InteriorFilter(p, filter)
 		if p >= 0
@@ -14,20 +39,21 @@ struct InteriorFilter
 	end
 end
 
-function Base.show(io::IO, IF::InteriorFilter)
-	S = support(IF)
-	println(io, "Filter for Daubechies ", van_moment(IF), " scaling function on [", S[1], ", ", S[end], "]:")
+filter(h::InteriorFilter) = h.filter
+coefficients(h::InteriorFilter) = h |> filter |> coefficients
+van_moment(h::InteriorFilter) = h.van_moment
+support(h::InteriorFilter) = h |> filter |> support
+Base.length(h::InteriorFilter) = h |> filter |> length
 
-	show(io, IF.filter)
+Base.getindex(h::InteriorFilter, idx) = filter(h)[idx]
+
+function Base.show(io::IO, h::InteriorFilter)
+	S = support(h)
+	println(io, "Filter for Daubechies ", van_moment(h), 
+			" scaling function on [", S[1], ", ", S[end], "]:")
+	show(io, h.filter)
 end
 
-function Base.getindex(h::InteriorFilter, idx::Int)
-	if checkbounds(Bool, h.filter, idx)
-		return h.filter[idx]
-	else
-		return 0.0
-	end
-end
 
 """
 	ifilter(p::Int)
@@ -43,20 +69,13 @@ function ifilter(p::Integer, symmlet::Bool=true)
 	p < 1 && throw(DomainError())
 
 	if symmlet && 1 < p <= 8
-		filter = OffsetArray(INTERIOR_FILTERS[p], -p+1:p)
+		coefficients = OffsetArray(INTERIOR_FILTERS[p], -p+1:p)
 	else
-		filter = OffsetArray(wavelet(WT.Daubechies{p}()).qmf, 0:2*p-1)
+		coefficients = OffsetArray(wavelet(WT.Daubechies{p}()).qmf, 0:2*p-1)
 	end
 
-	return InteriorFilter(p, filter)
+	return InteriorFilter(p, Filter(coefficients))
 end
-
-# Returns a copy; otherwise e.g. scale!(coef(C), 2) will modify C.filter
-coef(C::InteriorFilter) = copy(C.filter)
-
-van_moment(C::InteriorFilter) = C.van_moment
-support(C::InteriorFilter) = linearindices(C.filter)
-Base.length(C::InteriorFilter) = length(support(C))
 
 
 # ------------------------------------------------------------
@@ -67,6 +86,8 @@ immutable BoundaryFilter
 	van_moment::Int64
 	support::DaubSupport
 	filter::Array{Vector{Float64}}
+	#= filters::OffsetVector{OffsetVector{Float64, Vector{Float64}}} =#
+	#= filters::OffsetVector{Filter} =#
 
 	function BoundaryFilter(side, p, S, F)
 		if (side == 'L' || side == 'R') && (2 <= p <= 8)
