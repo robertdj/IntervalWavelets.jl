@@ -3,7 +3,6 @@ module IntervalWavelets
 using OffsetArrays
 using Compat
 using Plots
-#= import Plots: @recipe =#
 
 import Compat: view, String
 import Wavelets: wavelet, WT
