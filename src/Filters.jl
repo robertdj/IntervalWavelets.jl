@@ -61,14 +61,13 @@ Internal Daubechies filter with `p` vanishing moments and `phase` being
 "symmlet" or `min` (minimum phase).
 """
 function ifilter(p::Integer, phase::String="symmlet")
-#= function ifilter(p::Integer, symmlet::Bool=true) =#
 	if p < 1 
 		throw(DomainError())
 	end
 	phase = lowercase(phase)
 
 	if phase == "symmlet" && 1 < p <= 8
-		coefficients = OffsetArray(INTERIOR_FILTERS[p], -p+1:p)
+		coefficients = OffsetArray(INTERIOR_COEFFICIENTS[p], -p+1:p)
 	elseif phase == "min"
 		coefficients = OffsetArray(wavelet(WT.Daubechies{p}()).qmf, 0:2*p-1)
 	else
@@ -82,136 +81,139 @@ end
 # ------------------------------------------------------------
 # Functions and types for interacting with boundary filters
 
-immutable BoundaryFilter
-	side::Char
+struct BoundaryFilter
 	van_moment::Int64
-	#= support::DaubSupport =#
-	#= filter::Array{Vector{Float64}} =#
-	#= filters::OffsetVector{OffsetVector{Float64, Vector{Float64}}} =#
+	side::Char
 	filters::Vector{Filter}
 
-	function BoundaryFilter(side, p, f)
+	function BoundaryFilter(p, side, f)
 		if (side == 'L' || side == 'R') && (2 <= p <= 8)
-			new(side, p, f)
+			new(p, side, f)
 		else
 			throw(AssertionError("Not a valid boundary filter"))
 		end
 	end
 end
 
-left(B::BoundaryFilter) = left(B.support)
-right(B::BoundaryFilter) = right(B.support)
-side(B::BoundaryFilter) = B.side
+side(H::BoundaryFilter) = H.side
+van_moment(H::BoundaryFilter) = H.van_moment
 
-function Base.show(io::IO, B::BoundaryFilter)
-	#= S = support(B) =#
-	p = van_moment(B)
+"""
+	filter(BoundaryFilter, k::Int) 
 
-	side = (side(B) == 'L' ? "left" : "right")
-	print(io, "Filters for ", side, " Daubechies ", p, " scaling function on [", left(S), ", ", right(S), "]:")
+The filter for the `k`'th scaling function.
+"""
+function filter(H::BoundaryFilter, k::Int)
+	if !(0 <= k < van_moment(H))
+		throw(DomainError())
+	end
+
+	return H.filters[k+1]
+end
+
+function Base.show(io::IO, H::BoundaryFilter)
+	p = van_moment(H)
+
+	side_name = (side(H) == 'L' ? "left" : "right")
+	print(io, "Filters for ", side_name, " Daubechies ", p, " scaling function")
 
 	for k in 0:p-1
 		print(io, "\nk = ", k, ": ")
-		show(io, B.filters[k+1])
+		show(io, filter(H, k))
 	end
 end
 
+
+#= """ =#
+#= 	integers(B::BoundaryFilter) =#
+
+#= The non-zero integers in the support of the boundary scaling function with filter `B`. =#
+#= """ =#
+#= function integers(B::BoundaryFilter) =#
+#= 	if side(B) == 'L' =#
+#= 		return right(support(B)):-1:1 =#
+#= 	else side(B) == 'R' =#
+#= 		# The explicit step ensures type stability =#
+#= 		return left(support(B)):1:-1 =#
+#= 	end =#
+#= end =#
+
 """
-	integers(B::BoundaryFilter)
+	bfilter(p::Int, boundary::Char)
 
-The non-zero integers in the support of the boundary scaling function with filter `B`.
-"""
-function integers(B::BoundaryFilter)
-	if side(B) == 'L'
-		return right(support(B)):-1:1
-	else side(B) == 'R'
-		# The explicit step ensures type stability
-		return left(support(B)):1:-1
-	end
-end
-
-"""
-	bfilter(p::Int, boundary::Char) -> BoundaryFilter
-
-Return the boundary filters for the scaling functions with `p` vanishing moments.
-`N` can be between 2 and 8.
-
+The boundary filters for the scaling functions with `p` vanishing
+moments (``2 ≦ p ≦ 8``).
 `boundary` is either `'L'` or `'R'`.
 """
-function bfilter(p::Integer, boundary::Char)
+function bfilter(p::Int, boundary::Char)
 	if !(2 <= p <= 8) 
 		throw(AssertionError())
 	end
 
-	if boundary == 'L'
-		filter_dict = LEFT_SCALING_FILTERS
-	elseif boundary == 'R'
-		filter_dict = RIGHT_SCALING_FILTERS
-	else
-		error("Boundary must be 'L' or 'R'")
-	end
+	filters = coefficients_to_filter(p, boundary)
 
-	all_filters = Vector{Filter}(p)
-	for k in 1:p
-		support_idx = 0:(p + 2*(k-1))
-		all_filters[k] =
-			OffsetVector(filter_dict[p][k], support_idx) |>
-			Filter
-	end
-
-	return BoundaryFilter(boundary, p, all_filters)
+	return BoundaryFilter(p, boundary, filters)
 end
 
-"""
-	bfilter(BoundaryFilter, k::Int) -> Vector
+#= """ =#
+#= 	support(B::BoundaryFilter) =#
 
-Return the boundary filter for the `k`'th scaling function (0 <= `k` < the number of vanishing moments).
-"""
-function bfilter(B::BoundaryFilter, k::Int)
-	0 <= k < van_moment(B) || throw(DomainError())
-	return B.filter[k+1]
-end
+#= Union of the supports of the boundary scaling functions defined by the filters `B`. =#
+#= """ =#
+#= function support(B::BoundaryFilter) =#
+#= 	B.support =#
+#= end =#
 
+#= """ =#
+#= 	support(B::BoundaryFilter, k) =#
 
-"""
-	van_moment(F::BoundaryFilter) -> Integer
-
-Return the number of vanishing moments of the boundary scaling functions defined by `F`.
-"""
-function van_moment(F::BoundaryFilter)
-	return F.van_moment
-end
-
-"""
-	support(B::BoundaryFilter)
-
-Union of the supports of the boundary scaling functions defined by the filters `B`.
-"""
-function support(B::BoundaryFilter)
-	B.support
-end
-
-"""
-	support(B::BoundaryFilter, k)
-
-Support of the `k`'th boundary scaling function defined by the filters `B`.
-"""
-function support(B::BoundaryFilter, k::Integer)
-	0 <= k < (vm = van_moment(B)) || throw(DomainError())
-	if B.side == 'L'
-		return DaubSupport(0, vm+k)
-	elseif B.side == 'R'
-		return DaubSupport(-vm-k, 0)
-	end
-end
+#= Support of the `k`'th boundary scaling function defined by the filters `B`. =#
+#= """ =#
+#= function support(B::BoundaryFilter, k::Integer) =#
+#= 	0 <= k < (vm = van_moment(B)) || throw(DomainError()) =#
+#= 	if B.side == 'L' =#
+#= 		return DaubSupport(0, vm+k) =#
+#= 	elseif B.side == 'R' =#
+#= 		return DaubSupport(-vm-k, 0) =#
+#= 	end =#
+#= end =#
 
 
 # ------------------------------------------------------------
 # Boundary low pass filter coefficients for Daubechies wavelets
-# http://www.pacm.princeton.edu/~ingrid/publications/54.txt
+# http://numerical.recipes/contrib/
+
+"""
+	coefficients_to_filter(p, boundary)
+
+Convert coefficients of boundary filters to a `Vector` of `Filter`s.
+"""
+function coefficients_to_filter(p::Int, boundary::Char)
+	if boundary == 'L'
+		filter_dict = LEFT_SCALING_COEFFICIENTS
+	elseif boundary == 'R'
+		filter_dict = RIGHT_SCALING_COEFFICIENTS
+	else
+		error("Boundary must be 'L' or 'R'")
+	end
+
+	if !haskey(filter_dict, p)
+		throw(AssertionError())
+	end
+
+	filters = Vector{Filter}(p)
+	for k in 0:(p - 1)
+		support_idx = 0:(p + 2*k)
+		filters[k+1] =
+			OffsetVector(filter_dict[p][k+1], support_idx) |>
+			Filter
+	end
+
+	return filters
+end
 
 
-const INTERIOR_FILTERS = Dict{Int, Vector{Float64}}(
+const INTERIOR_COEFFICIENTS = Dict{Int, Vector{Float64}}(
 2 => [ 0.482962913145 ; 0.836516303738 ; 0.224143868042 ; -0.129409522551 ]
 ,
 3 => [ .332670552950 ; .806891509311 ; .459877502118 ; -.135011020010 ; -.085441273882 ; .035226291882 ]
@@ -227,7 +229,7 @@ const INTERIOR_FILTERS = Dict{Int, Vector{Float64}}(
 8 => [ 0.00267279339281 ; -0.000428394300246 ; -0.0211456865284 ; 0.00538638875377 ; 0.0694904659113 ; -0.0384935212634 ; -0.0734625087609 ; 0.515398670374 ; 1.09910663054 ; 0.68074534719 ; -0.0866536154058 ; -0.202648655286 ; 0.0107586117505 ; 0.0448236230437 ; -0.000766690896228 ; -0.0047834585115 ] / sqrt2
 )
 
-const LEFT_SCALING_FILTERS = Dict{Int, Vector{Vector{Float64}}}(
+const LEFT_SCALING_COEFFICIENTS = Dict{Int, Vector{Vector{Float64}}}(
 2 => Any[
 [ 0.6033325119E+00 ; 0.6908955318E+00 ; -0.3983129977E+00 ]
 ,
@@ -314,7 +316,7 @@ const LEFT_SCALING_FILTERS = Dict{Int, Vector{Vector{Float64}}}(
 )
 
 
-const RIGHT_SCALING_FILTERS = Dict{Int, Vector{Vector{Float64}}}(
+const RIGHT_SCALING_COEFFICIENTS = Dict{Int, Vector{Vector{Float64}}}(
 2 => Any[
 [ 0.8705087534E+00 ; 0.4348969980E+00 ; 0.2303890438E+00 ]
 ,
