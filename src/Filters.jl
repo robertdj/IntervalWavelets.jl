@@ -5,9 +5,8 @@ struct Filter
 	coefficients::OffsetVector{Float64, Vector{Float64}}
 end
 
-# Returns a copy; otherwise e.g. scale! will modify h.coefficients
-coefficients(h::Filter) = copy(h.coefficients)
-support(h::Filter) = linearindices(h.coefficients)
+coefficients(h::Filter) = h.coefficients
+support(h::Filter) = h |> coefficients |> linearindices
 Base.length(h::Filter) = h |> support |> length
 
 function Base.show(io::IO, h::Filter)
@@ -15,8 +14,8 @@ function Base.show(io::IO, h::Filter)
 end
 
 function Base.getindex(h::Filter, idx::Int)
-	if checkbounds(Bool, h.coefficients, idx)
-		return h.coefficients[idx]
+	if checkbounds(Bool, coefficients(h), idx)
+		return coefficients(h)[idx]
 	else
 		return 0.0
 	end
@@ -40,8 +39,8 @@ struct InteriorFilter
 end
 
 filter(h::InteriorFilter) = h.filter
-coefficients(h::InteriorFilter) = h |> filter |> coefficients
 van_moment(h::InteriorFilter) = h.van_moment
+coefficients(h::InteriorFilter) = h |> filter |> coefficients
 support(h::InteriorFilter) = h |> filter |> support
 Base.length(h::InteriorFilter) = h |> filter |> length
 
@@ -56,22 +55,24 @@ end
 
 
 """
-	ifilter(p::Int)
+	ifilter(p::Int[, phase="symmlet"])
 
-Internal Daubechies filter with `p` vanishing moments with the **normal** filters.
-
-	ifilter(p::Int, true)
-
-Internal Daubechies filter with `p` vanishing moments with the symmlet filters.
-This is the default.
+Internal Daubechies filter with `p` vanishing moments and `phase` being
+"symmlet" or `min` (minimum phase).
 """
-function ifilter(p::Integer, symmlet::Bool=true)
-	p < 1 && throw(DomainError())
+function ifilter(p::Integer, phase::String="symmlet")
+#= function ifilter(p::Integer, symmlet::Bool=true) =#
+	if p < 1 
+		throw(DomainError())
+	end
+	phase = lowercase(phase)
 
-	if symmlet && 1 < p <= 8
+	if phase == "symmlet" && 1 < p <= 8
 		coefficients = OffsetArray(INTERIOR_FILTERS[p], -p+1:p)
-	else
+	elseif phase == "min"
 		coefficients = OffsetArray(wavelet(WT.Daubechies{p}()).qmf, 0:2*p-1)
+	else
+		throw(DomainError())
 	end
 
 	return InteriorFilter(p, Filter(coefficients))
@@ -84,14 +85,14 @@ end
 immutable BoundaryFilter
 	side::Char
 	van_moment::Int64
-	support::DaubSupport
-	filter::Array{Vector{Float64}}
+	#= support::DaubSupport =#
+	#= filter::Array{Vector{Float64}} =#
 	#= filters::OffsetVector{OffsetVector{Float64, Vector{Float64}}} =#
-	#= filters::OffsetVector{Filter} =#
+	filters::Vector{Filter}
 
-	function BoundaryFilter(side, p, S, F)
+	function BoundaryFilter(side, p, f)
 		if (side == 'L' || side == 'R') && (2 <= p <= 8)
-			new(side, p, S, F)
+			new(side, p, f)
 		else
 			throw(AssertionError("Not a valid boundary filter"))
 		end
@@ -103,15 +104,15 @@ right(B::BoundaryFilter) = right(B.support)
 side(B::BoundaryFilter) = B.side
 
 function Base.show(io::IO, B::BoundaryFilter)
-	S = support(B)
+	#= S = support(B) =#
 	p = van_moment(B)
 
-	side = (B.side == 'L' ? "left" : "right")
+	side = (side(B) == 'L' ? "left" : "right")
 	print(io, "Filters for ", side, " Daubechies ", p, " scaling function on [", left(S), ", ", right(S), "]:")
 
 	for k in 0:p-1
 		print(io, "\nk = ", k, ": ")
-		show(io, bfilter(B,k))
+		show(io, B.filters[k+1])
 	end
 end
 
@@ -138,15 +139,27 @@ Return the boundary filters for the scaling functions with `p` vanishing moments
 `boundary` is either `'L'` or `'R'`.
 """
 function bfilter(p::Integer, boundary::Char)
-	2 <= p <= 8 || throw(AssertionError())
+	if !(2 <= p <= 8) 
+		throw(AssertionError())
+	end
 
 	if boundary == 'L'
-		 return BoundaryFilter('L', p, DaubSupport(0, 2*p-1), LEFT_SCALING_FILTERS[p])
+		filter_dict = LEFT_SCALING_FILTERS
 	elseif boundary == 'R'
-		 return BoundaryFilter('R', p, DaubSupport(-2*p+1, 0), RIGHT_SCALING_FILTERS[p])
+		filter_dict = RIGHT_SCALING_FILTERS
 	else
 		error("Boundary must be 'L' or 'R'")
 	end
+
+	all_filters = Vector{Filter}(p)
+	for k in 1:p
+		support_idx = 0:(p + 2*(k-1))
+		all_filters[k] =
+			OffsetVector(filter_dict[p][k], support_idx) |>
+			Filter
+	end
+
+	return BoundaryFilter(boundary, p, all_filters)
 end
 
 """
@@ -214,7 +227,7 @@ const INTERIOR_FILTERS = Dict{Int, Vector{Float64}}(
 8 => [ 0.00267279339281 ; -0.000428394300246 ; -0.0211456865284 ; 0.00538638875377 ; 0.0694904659113 ; -0.0384935212634 ; -0.0734625087609 ; 0.515398670374 ; 1.09910663054 ; 0.68074534719 ; -0.0866536154058 ; -0.202648655286 ; 0.0107586117505 ; 0.0448236230437 ; -0.000766690896228 ; -0.0047834585115 ] / sqrt2
 )
 
-const LEFT_SCALING_FILTERS = Dict{Int, Array{Vector}}(
+const LEFT_SCALING_FILTERS = Dict{Int, Vector{Vector{Float64}}}(
 2 => Any[
 [ 0.6033325119E+00 ; 0.6908955318E+00 ; -0.3983129977E+00 ]
 ,
@@ -301,7 +314,7 @@ const LEFT_SCALING_FILTERS = Dict{Int, Array{Vector}}(
 )
 
 
-const RIGHT_SCALING_FILTERS = Dict{Int, Array{Vector}}(
+const RIGHT_SCALING_FILTERS = Dict{Int, Vector{Vector{Float64}}}(
 2 => Any[
 [ 0.8705087534E+00 ; 0.4348969980E+00 ; 0.2303890438E+00 ]
 ,
