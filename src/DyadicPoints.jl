@@ -22,7 +22,7 @@ end
 
 function Base.show(io::IO, y::DyadicRationalsVector)
 	println(io, "Dyadic rationals vector of resolution ", resolution(y),
-			" and indices ", linearindices(parent(y)))
+			" and with indices ", linearindices(parent(y)))
 	show(io, parent(y))
 end
 

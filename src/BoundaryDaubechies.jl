@@ -44,6 +44,56 @@ function DaubScaling(B::BoundaryFilter)
 	return E
 end
 
+function DaubScaling2(H::BoundaryFilter, h::InteriorFilter)
+	if (p = van_moment(h)) != van_moment(H)
+		throw(AssertionError())
+	end
+
+	y = Vector{DyadicRationalsVector}(p)
+	y_indices = Vector{UnitRange{Int64}}(p)
+	for k in 0:p-1
+		y_indices[k+1] = 0:p+k
+		y[k+1] = DyadicRationalsVector(0, OffsetVector(zeros(p+k+1), 0:p+k))
+	end
+
+	# The largest integer with non-zero function values
+	y_max_support = map(maximum, y_indices) |> 
+		maximum |> 
+		x -> x - 1
+
+	y_interior = DaubScaling(h)
+	y_interior_support = linearindices(y_interior)
+	for x in y_max_support:-1:1
+		for k in p-1:-1:0
+			# TODO: Switch checkindex with k values
+			if !checkindex(Bool, y_indices[k+1], x)
+				continue
+			end
+
+			yval = 0.0
+
+			# Boundary contribution
+			for l in 0:p-1
+				if checkindex(Bool, y_indices[k+1], 2*x)
+					yval += sqrt2 * filter(H,k)[l] * y[k+1][2*x]
+				end
+			end
+
+			# Interior contribution
+			for m in p:p+2*k
+				y_int_idx = 2*x - m
+				if checkindex(Bool, y_interior_support, y_int_idx)
+					yval += sqrt2 * filter(H,k)[m] * y_interior[y_int_idx]
+				end
+			end
+
+			y[k+1][x] = yval
+		end
+	end
+
+	return y
+end
+
 #=
 	DaubScaling(B, I) -> Matrix
 
