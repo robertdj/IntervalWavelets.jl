@@ -51,30 +51,26 @@ function DaubScaling(H::BoundaryFilter, h::InteriorFilter)
 		throw(AssertionError())
 	end
 
+	# The DyadicRationalsVector is not an AbstractArray and cannot be
+	# used in an OffsetVector
 	Y = Vector{DyadicRationalsVector}(p)
-	#= Y = OffsetVector{DyadicRationalsVector}(0:p-1) =#
 	Y_indices = OffsetVector{UnitRange{Int64}}(0:p-1)
 	for k in 0:p-1
 		Y_indices[k] = 0:p+k
 		Y[k+1] = DyadicRationalsVector(0, OffsetVector(zeros(p+k+1), 0:p+k))
+
+		# TODO: How to compute function values at 0?
+		Y[k+1][0] = NaN
 	end
 
-	# The largest integer with non-zero function values
-	y_max_support = map(maximum, Y_indices) |> 
-		maximum |> 
-		x -> x - 1
-
 	# Interior scaling function
-	y_interior = DaubScaling(h)
-	y_interior_support = linearindices(y_interior)
-	y_max_support = 2*p - 1
-	for x in y_max_support:-1:1
-		for k in p-1:-1:0
-			# TODO: Switch checkindex with k values
-			if !checkindex(Bool, Y_indices[k], x)
-				continue
-			end
+	y = DaubScaling(h)
+	y_indices = linearindices(y)
 
+	# Loop over the integers with non-zero function values, which
+	# depends on the function index (k)
+	for x in 2*p-2:-1:1
+		for k in p-1:-1:max(x-p+1,0)
 			yval = 0.0
 
 			# Boundary contribution
@@ -87,16 +83,14 @@ function DaubScaling(H::BoundaryFilter, h::InteriorFilter)
 			# Interior contribution
 			for m in p:p+2*k
 				y_int_idx = 2*x - m
-				if checkindex(Bool, y_interior_support, y_int_idx)
-					yval += sqrt2 * filter(H,k)[m] * y_interior[y_int_idx]
+				if checkindex(Bool, y_indices, y_int_idx)
+					yval += sqrt2 * filter(H,k)[m] * y[y_int_idx]
 				end
 			end
 
 			Y[k+1][x] = yval
 		end
 	end
-
-	# TODO: How to compute function value at 0?
 
 	return Y
 end
