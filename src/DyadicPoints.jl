@@ -22,7 +22,7 @@ end
 
 function Base.show(io::IO, y::DyadicRationalsVector)
 	println(io, "Dyadic rationals vector of resolution ", resolution(y),
-			" and with indices ", linearindices(parent(y)))
+				" and with indices ", linearindices(parent(y)))
 	show(io, parent(y))
 end
 
@@ -30,6 +30,8 @@ Base.parent(y::DyadicRationalsVector) = y.parent
 resolution(y::DyadicRationalsVector) = y.resolution
 
 Base.linearindices(y::DyadicRationalsVector) = linearindices(parent(y))
+#= Base.size(y::DyadicRationalsVector) = y |> parent |> indices =#
+#= Base.size(y::DyadicRationalsVector) = map(length, indices(parent(y))) =#
 
 @inline function Base.getindex(y::DyadicRationalsVector, idx)
 	parent(y)[idx]
@@ -40,9 +42,7 @@ end
 end
 
 function Base.length(y::DyadicRationalsVector)
-	y |> 
-		linearindices |>
-		length
+	y |> linearindices |> length
 end
 
 function support(y::DyadicRationalsVector)
@@ -61,7 +61,15 @@ end
 	# linecolor --> :black
 	seriestype := :path
 
-	x, yvals = collect(y)
+	collect(y)
+end
+
+@recipe function f(Y::Vector{DyadicRationalsVector})
+	for i in linearindices(Y)
+		@series begin
+			collect(Y[i])
+		end
+	end
 end
 
 
