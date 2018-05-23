@@ -115,7 +115,7 @@ function Base.show(io::IO, H::BoundaryFilter)
 	p = van_moment(H)
 
 	side_name = (side(H) == 'L' ? "left" : "right")
-	print(io, "Filters for ", side_name, " Daubechies ", p, " scaling function")
+	print(io, "Filters for ", side_name, " Daubechies ", p, " scaling functions")
 
 	for k in 0:p-1
 		print(io, "\nk = ", k, ": ")

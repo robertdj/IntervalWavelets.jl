@@ -2,7 +2,7 @@ module IntervalWavelets
 
 using OffsetArrays
 using Compat
-using Plots
+using RecipesBase
 
 import Compat: view, String
 import Wavelets: wavelet, WT

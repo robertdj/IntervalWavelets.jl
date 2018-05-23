@@ -114,7 +114,6 @@ function DaubScaling(Y::Vector{DyadicRationalsVector}, y::DyadicRationalsVector,
 	for k in 0:p-1
 		Y_indices[k] = linearindices(Y[k+1])
 	end
-	@show Y_indices
 
 	unitstep = 2^R
 	Z = Vector{DyadicRationalsVector}(p)

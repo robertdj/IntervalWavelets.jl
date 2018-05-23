@@ -58,16 +58,15 @@ end
 
 # Make a `plot` function for DyadicRationalsVector using the Plots package
 @recipe function f(y::DyadicRationalsVector)
-	# linecolor --> :black
 	seriestype := :path
 
 	collect(y)
 end
 
 @recipe function f(Y::Vector{DyadicRationalsVector})
-	for i in linearindices(Y)
+	for y in Y
 		@series begin
-			collect(Y[i])
+			collect(y)
 		end
 	end
 end
