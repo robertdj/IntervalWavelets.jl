@@ -9,8 +9,10 @@ function boundary_coef_mat(F::BoundaryFilter)
 	coef_mat = zeros(Float64, vm, vm)
 
 	for row in 1:vm
-		coef = bfilter(F, row-1)
-		@inbounds coef_mat[row,:] = sqrt2*coef[1:vm]
+		coef = filter(F, row-1)
+		for col in 1:vm
+			coef_mat[row,col] = sqrt2*coef[col]
+		end
 	end
 
 	return coef_mat
@@ -44,29 +46,32 @@ function DaubScaling(B::BoundaryFilter)
 	return E
 end
 
-function DaubScaling2(H::BoundaryFilter, h::InteriorFilter)
+function DaubScaling(H::BoundaryFilter, h::InteriorFilter)
 	if (p = van_moment(h)) != van_moment(H)
 		throw(AssertionError())
 	end
 
-	y = Vector{DyadicRationalsVector}(p)
-	y_indices = Vector{UnitRange{Int64}}(p)
+	Y = Vector{DyadicRationalsVector}(p)
+	#= Y = OffsetVector{DyadicRationalsVector}(0:p-1) =#
+	Y_indices = OffsetVector{UnitRange{Int64}}(0:p-1)
 	for k in 0:p-1
-		y_indices[k+1] = 0:p+k
-		y[k+1] = DyadicRationalsVector(0, OffsetVector(zeros(p+k+1), 0:p+k))
+		Y_indices[k] = 0:p+k
+		Y[k+1] = DyadicRationalsVector(0, OffsetVector(zeros(p+k+1), 0:p+k))
 	end
 
 	# The largest integer with non-zero function values
-	y_max_support = map(maximum, y_indices) |> 
+	y_max_support = map(maximum, Y_indices) |> 
 		maximum |> 
 		x -> x - 1
 
+	# Interior scaling function
 	y_interior = DaubScaling(h)
 	y_interior_support = linearindices(y_interior)
+	y_max_support = 2*p - 1
 	for x in y_max_support:-1:1
 		for k in p-1:-1:0
 			# TODO: Switch checkindex with k values
-			if !checkindex(Bool, y_indices[k+1], x)
+			if !checkindex(Bool, Y_indices[k], x)
 				continue
 			end
 
@@ -74,8 +79,8 @@ function DaubScaling2(H::BoundaryFilter, h::InteriorFilter)
 
 			# Boundary contribution
 			for l in 0:p-1
-				if checkindex(Bool, y_indices[k+1], 2*x)
-					yval += sqrt2 * filter(H,k)[l] * y[k+1][2*x]
+				if checkindex(Bool, Y_indices[k], 2*x)
+					yval += sqrt2 * filter(H,k)[l] * Y[l+1][2*x]
 				end
 			end
 
@@ -87,12 +92,34 @@ function DaubScaling2(H::BoundaryFilter, h::InteriorFilter)
 				end
 			end
 
-			y[k+1][x] = yval
+			Y[k+1][x] = yval
 		end
 	end
 
-	return y
+	# TODO: Just a guess at determining the function values at zero
+	for k in 1:p
+		Y[k][0] = 1.0 - sum(parent(Y[k]))
+	end
+
+	return Y
 end
+
+
+function DaubScaling(H::BoundaryFilter, h::InteriorFilter, R::Int)
+	if R < 0
+		throw(DomainError())
+	end
+
+	Y = DaubScaling(H, h)
+	y = DaubScaling(h)
+	for res in 1:R
+		Y = DaubScaling(Y, y, H, h)
+		y = DaubScaling(y, h)
+	end
+
+	return Y
+end
+
 
 #=
 	DaubScaling(B, I) -> Matrix
@@ -102,7 +129,7 @@ interior filter `I` at the non-zero integers in their support.
 
 The ouput is a matrix where the `k`'th row are the functions values of the `k-1` scaling function.
 =#
-function DaubScaling(B::BoundaryFilter, IF::InteriorFilter)
+function DaubScaling1(B::BoundaryFilter, IF::InteriorFilter)
 	internal = DaubScaling(IF)
 	IS = support(IF)
 	BS = support(B)
@@ -157,7 +184,7 @@ Compute the boundary scaling function defined by boundary filter `B` and interio
 
 The ouput is a matrix where the `k`'th row are the functions values of the `k-1` scaling function.
 """
-function DaubScaling(B::BoundaryFilter, IF::InteriorFilter, R::Int)
+function DaubScaling1(B::BoundaryFilter, IF::InteriorFilter, R::Int)
 	R >= 0 || throw(DomainError())
 
 	internal = DaubScaling(IF,R)
