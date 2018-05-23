@@ -52,7 +52,7 @@ function DaubScaling(H::BoundaryFilter, h::InteriorFilter)
 	end
 
 	# The DyadicRationalsVector is not an AbstractArray and cannot be
-	# used in an OffsetVector
+	# used in an OffsetVector. In the remainder we have to +1 when indexing Y
 	Y = Vector{DyadicRationalsVector}(p)
 	Y_indices = OffsetVector{UnitRange{Int64}}(0:p-1)
 	for k in 0:p-1
@@ -96,6 +96,81 @@ function DaubScaling(H::BoundaryFilter, h::InteriorFilter)
 	return Y
 end
 
+
+function DaubScaling(Y::Vector{DyadicRationalsVector}, y::DyadicRationalsVector,
+				     H::BoundaryFilter, h::InteriorFilter)
+	if (p = van_moment(h)) != van_moment(H)
+		throw(AssertionError())
+	end
+	# TODO: Check all resolutions in Y
+	if (R = resolution(y)) != resolution(Y[1])
+		throw(AssertionError())
+	end
+
+	y_indices = linearindices(y)
+	#= Y_indices = map(linearindices, Y) =#
+	#= Y_indices = OffsetVector(map(linearindices, Y), 0:p-1) =#
+	Y_indices = OffsetVector{UnitRange{Int64}}(0:p-1)
+	for k in 0:p-1
+		Y_indices[k] = linearindices(Y[k+1])
+	end
+	@show Y_indices
+
+	unitstep = 2^R
+	Z = Vector{DyadicRationalsVector}(p)
+
+	for k in 0:p-1
+		Y_support = support(Y[k+1])
+		# TODO: The left endpoint of the support is always 0
+		Y_min_support = Int(Y_support[1])
+		Y_max_support = Int(Y_support[end])
+		#= y_indices = linearindices(Y[k+1]) =#
+
+		z_length = 1 + (Y_max_support - Y_min_support) * 2^(R+1)
+		z_min_index = 2*Y_indices[k][1]
+		z_max_index = 2*Y_indices[k][end]
+		z = OffsetVector(zeros(z_length), z_min_index:z_max_index)
+		z[z_min_index] = Y[k+1][Y_indices[k][1]]
+		#= z[z_min_index:2:z_max_index] = parent(Y[k+1]) =#
+
+		# The even indices are inherited from the input. The odd indices are
+		# computed using the dilation equation
+		zi = z_min_index
+		while zi < z_max_index
+			# ------------------------------------------------------------------
+			# Odd indices
+			zi += 1
+			zval = 0.0
+
+			# Boundary contribution
+			for Hi in 0:p-1
+				Yi = zi
+				if checkindex(Bool, Y_indices[Hi], Yi)
+					zval += sqrt2 * filter(H, k)[Hi] * Y[Hi+1][Yi]
+				end
+			end
+
+			# Interior contribution
+			for Hi in p:p+2*k
+				yi = zi - Hi * unitstep
+				if checkindex(Bool, y_indices, yi)
+					zval += sqrt2 * filter(H, k)[Hi] * y[yi]
+				end
+			end
+
+			z[zi] = zval
+
+			# ------------------------------------------------------------------
+			# Even indices
+			zi += 1
+			z[zi] = Y[k+1][div(zi, 2)]
+		end
+
+		Z[k+1] = DyadicRationalsVector(R+1, z)
+	end
+
+	return Z
+end
 
 function DaubScaling(H::BoundaryFilter, h::InteriorFilter, R::Int)
 	if R < 0
