@@ -79,7 +79,7 @@ function DaubScaling(H::BoundaryFilter, h::InteriorFilter)
 
 			# Boundary contribution
 			for l in 0:p-1
-				if checkindex(Bool, Y_indices[k], 2*x)
+				if checkindex(Bool, Y_indices[l], 2*x)
 					yval += sqrt2 * filter(H,k)[l] * Y[l+1][2*x]
 				end
 			end
@@ -96,10 +96,7 @@ function DaubScaling(H::BoundaryFilter, h::InteriorFilter)
 		end
 	end
 
-	# TODO: Just a guess at determining the function values at zero
-	for k in 1:p
-		Y[k][0] = 1.0 - sum(parent(Y[k]))
-	end
+	# TODO: How to compute function value at 0?
 
 	return Y
 end
