@@ -16,8 +16,8 @@ end
 
 A Daubechies `p` scaling function evaluated in the dyadic rationals at resolution `R`.
 """
-function DaubScaling(p::Integer, R::Integer, symmlet::Bool=true)
-	h = ifilter(p, symmlet)
+function DaubScaling(p::Integer, R::Integer, phase::String="symmlet")
+	h = ifilter(p, phase)
 	DaubScaling(h, R)
 end
 
@@ -83,22 +83,26 @@ function DaubScaling(y::DyadicRationalsVector, h::InteriorFilter)
 	z = OffsetVector(zeros(z_length), z_min_index:z_max_index)
 
 	# The even indices are inherited from the input. The odd indices are
-	# computed using the recursive formula
+	# computed using the dilation equation
+	# The first value is always zero (due to the continuity and compact
+	# support), so we don't copy this (makes the code easier)
 	unitstep = 2^resolution(y)
-	zi = z_min_index - 1
+	zi = z_min_index
 	while zi < z_max_index
-		# Even indices
-		zi += 1
-		z[zi] = y[div(zi, 2)]
-		
 		# Odd indices
 		zi += 1
+		zval = 0.0
 		for hi in support(h)
 			yi = zi - hi * unitstep
 			if checkindex(Bool, y_indices, yi)
-				z[zi] += sqrt2 * h[hi] * y[yi]
+				zval += sqrt2 * h[hi] * y[yi]
 			end
 		end
+		z[zi] = zval
+
+		# Even indices
+		zi += 1
+		z[zi] = y[div(zi, 2)]
 	end
 
 	DyadicRationalsVector(resolution(y)+1, z)
@@ -109,6 +113,10 @@ Compute the scaling function defined by the filter `h` at the dyadic
 rationals of resolution `R`.
 """
 function DaubScaling(h::InteriorFilter, R::Int)
+	if R < 0
+		throw(DomainError())
+	end
+
 	phi = DaubScaling(h)
 	for res in 1:R
 		phi = DaubScaling(phi, h)

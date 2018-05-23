@@ -74,17 +74,18 @@ function DaubScaling(H::BoundaryFilter, h::InteriorFilter)
 			yval = 0.0
 
 			# Boundary contribution
-			for l in 0:p-1
-				if checkindex(Bool, Y_indices[l], 2*x)
-					yval += sqrt2 * filter(H,k)[l] * Y[l+1][2*x]
+			for Hi in 0:p-1
+				Yi = 2*x
+				if checkindex(Bool, Y_indices[Hi], Yi)
+					yval += sqrt2 * filter(H, k)[Hi] * Y[Hi+1][Yi]
 				end
 			end
 
 			# Interior contribution
-			for m in p:p+2*k
-				y_int_idx = 2*x - m
-				if checkindex(Bool, y_indices, y_int_idx)
-					yval += sqrt2 * filter(H,k)[m] * y[y_int_idx]
+			for Hi in p:p+2*k
+				yi = 2*x - Hi
+				if checkindex(Bool, y_indices, yi)
+					yval += sqrt2 * filter(H, k)[Hi] * y[yi]
 				end
 			end
 
