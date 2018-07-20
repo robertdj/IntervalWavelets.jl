@@ -6,7 +6,7 @@ The value at the `k`'th index of Dyadic Rationals Vector of resolution
 `R` is k/2^R.
 """
 struct DyadicRationalsVector
-	# TODO: values should be any abstract vector?
+	# TODO: should values be any abstract vector?
 	resolution::Int64
 	parent::OffsetVector{Float64, Vector{Float64}}
 
@@ -22,7 +22,7 @@ end
 
 function Base.show(io::IO, y::DyadicRationalsVector)
 	println(io, "Dyadic rationals vector of resolution ", resolution(y),
-				" and with indices ", linearindices(parent(y)))
+				" and with indices ", linearindices(y))
 	show(io, parent(y))
 end
 
@@ -30,8 +30,6 @@ Base.parent(y::DyadicRationalsVector) = y.parent
 resolution(y::DyadicRationalsVector) = y.resolution
 
 Base.linearindices(y::DyadicRationalsVector) = linearindices(parent(y))
-#= Base.size(y::DyadicRationalsVector) = y |> parent |> indices =#
-#= Base.size(y::DyadicRationalsVector) = map(length, indices(parent(y))) =#
 
 @inline function Base.getindex(y::DyadicRationalsVector, idx)
 	parent(y)[idx]
