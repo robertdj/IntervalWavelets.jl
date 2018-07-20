@@ -6,7 +6,7 @@ The value at the `k`'th index of Dyadic Rationals Vector of resolution
 `R` is k/2^R.
 """
 struct DyadicRationalsVector
-	# TODO: values should be any abstract vector?
+	# TODO: should values be any abstract vector?
 	resolution::Int64
 	parent::OffsetVector{Float64, Vector{Float64}}
 
@@ -22,7 +22,7 @@ end
 
 function Base.show(io::IO, y::DyadicRationalsVector)
 	println(io, "Dyadic rationals vector of resolution ", resolution(y),
-			" and indices ", linearindices(parent(y)))
+				" and with indices ", linearindices(y))
 	show(io, parent(y))
 end
 
@@ -40,9 +40,7 @@ end
 end
 
 function Base.length(y::DyadicRationalsVector)
-	y |> 
-		linearindices |>
-		length
+	y |> linearindices |> length
 end
 
 function support(y::DyadicRationalsVector)
@@ -58,10 +56,17 @@ end
 
 # Make a `plot` function for DyadicRationalsVector using the Plots package
 @recipe function f(y::DyadicRationalsVector)
-	# linecolor --> :black
 	seriestype := :path
 
-	x, yvals = collect(y)
+	collect(y)
+end
+
+@recipe function f(Y::Vector{DyadicRationalsVector})
+	for y in Y
+		@series begin
+			collect(y)
+		end
+	end
 end
 
 
