@@ -11,7 +11,7 @@ function boundary_coef_mat(F::BoundaryFilter)
 	for row in 1:vm
 		coef = filter(F, row-1)
 		for col in 1:vm
-			coef_mat[row,col] = sqrt2*coef[col]
+			coef_mat[row, col] = sqrt2*coef[col]
 		end
 	end
 
@@ -23,9 +23,9 @@ end
 
 Compute the boundary scaling function at resolution `R` on `side` with `p` vanishing moments.
 """
-function DaubScaling(p::Integer, side::Char, R::Integer)
+function DaubScaling(p::Integer, side::Char, R::Integer, phase::String="symmlet")
 	B = bfilter(p, side)
-	IF = ifilter(p, true)
+	IF = ifilter(p, phase)
 
 	x = dyadic_rationals( support(B), R )
 	Y = DaubScaling(B, IF, R)
@@ -33,6 +33,7 @@ function DaubScaling(p::Integer, side::Char, R::Integer)
 	return x, Y'
 end
 
+# TODO: Don't keep this function if we don't use it
 #=
 	DaubScaling(B::BoundaryFilter) -> Vector
 
@@ -56,8 +57,9 @@ function DaubScaling(H::BoundaryFilter, h::InteriorFilter)
 	Y = Vector{DyadicRationalsVector}(p)
 	Y_indices = OffsetVector{UnitRange{Int64}}(0:p-1)
 	for k in 0:p-1
-		Y_indices[k] = 0:p+k
-		Y[k+1] = DyadicRationalsVector(0, OffsetVector(zeros(p+k+1), 0:p+k))
+		Y_indices[k] = support_integers(H, k)
+		Y[k+1] = DyadicRationalsVector(0, OffsetVector(zeros(p+k+1), 
+													   Y_indices[k]))
 
 		# TODO: How to compute function values at 0?
 		Y[k+1][0] = NaN
@@ -69,8 +71,14 @@ function DaubScaling(H::BoundaryFilter, h::InteriorFilter)
 
 	# Loop over the integers with non-zero function values, which
 	# depends on the function index (k)
-	for x in 2*p-2:-1:1
-		for k in p-1:-1:max(x-p+1,0)
+	Y_support = loop_support_integers(H)
+
+	for x in Y_support
+		for k in p-1:-1:0
+			if !checkindex(Bool, Y_indices[k], x)
+				continue
+			end
+
 			yval = 0.0
 
 			# Boundary contribution
@@ -83,7 +91,7 @@ function DaubScaling(H::BoundaryFilter, h::InteriorFilter)
 
 			# Interior contribution
 			for Hi in p:p+2*k
-				yi = 2*x - Hi
+				yi = interior_index(H, x, Hi)
 				if checkindex(Bool, y_indices, yi)
 					yval += sqrt2 * filter(H, k)[Hi] * y[yi]
 				end
@@ -120,7 +128,6 @@ function DaubScaling(Y::Vector{DyadicRationalsVector}, y::DyadicRationalsVector,
 
 	for k in 0:p-1
 		Y_support = support(Y[k+1])
-		# TODO: The left endpoint of the support is always 0
 		Y_min_support = Int(Y_support[1])
 		Y_max_support = Int(Y_support[end])
 		#= y_indices = linearindices(Y[k+1]) =#
@@ -128,13 +135,13 @@ function DaubScaling(Y::Vector{DyadicRationalsVector}, y::DyadicRationalsVector,
 		z_length = 1 + (Y_max_support - Y_min_support) * 2^(R+1)
 		z_min_index = 2*Y_indices[k][1]
 		z_max_index = 2*Y_indices[k][end]
-		z = OffsetVector(zeros(z_length), z_min_index:z_max_index)
-		z[z_min_index] = Y[k+1][Y_indices[k][1]]
-		#= z[z_min_index:2:z_max_index] = parent(Y[k+1]) =#
+		z = OffsetVector(Array{Float64}(z_length), z_min_index:z_max_index)
 
 		# The even indices are inherited from the input. The odd indices are
 		# computed using the dilation equation
+		# TODO: In Julia v0.7, use the `first` index
 		zi = z_min_index
+		z[zi] = Y[k+1][Y_indices[k][1]]
 		while zi < z_max_index
 			# ------------------------------------------------------------------
 			# Odd indices
@@ -151,7 +158,7 @@ function DaubScaling(Y::Vector{DyadicRationalsVector}, y::DyadicRationalsVector,
 
 			# Interior contribution
 			for Hi in p:p+2*k
-				yi = zi - Hi * unitstep
+				yi = interior_index(H, zi, Hi, unitstep)
 				if checkindex(Bool, y_indices, yi)
 					zval += sqrt2 * filter(H, k)[Hi] * y[yi]
 				end
@@ -312,5 +319,47 @@ function DaubScaling1(B::BoundaryFilter, IF::InteriorFilter, R::Int)
 	end
 
 	return Y
+end
+
+
+
+# ------------------------------------------------------------------------------
+
+function support_integers(H::BoundaryFilter, k::Int)
+	p = van_moment(H)
+	if side(H) == 'L'
+		return 0:p+k
+	else
+	#= elseif side(H) == 'R' =#
+		# Type unstable with elseif as the compiler thinks that "Void"
+		# is a possible return type. Change if this function is
+		# @generated
+		return -p-k:0
+	end
+end
+
+function loop_support_integers(H::BoundaryFilter)
+	p = van_moment(H)
+	if side(H) == 'L'
+		return 2*p-2:-1:1
+	else
+		return -2*p+2:-1
+	end
+end
+
+function interior_index(H::BoundaryFilter, x::Int, Hi::Int)
+	if side(H) == 'L'
+		return 2*x - Hi
+	else
+		return 2*x + Hi + 1
+	end
+end
+
+function interior_index(H::BoundaryFilter, zi::Int, Hi::Int, unitstep::Int)
+	if side(H) == 'L'
+		return zi - Hi * unitstep
+	else
+		return zi + (Hi + 1) * unitstep
+	end
 end
 
