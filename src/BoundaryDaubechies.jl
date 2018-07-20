@@ -135,9 +135,7 @@ function DaubScaling(Y::Vector{DyadicRationalsVector}, y::DyadicRationalsVector,
 		z_length = 1 + (Y_max_support - Y_min_support) * 2^(R+1)
 		z_min_index = 2*Y_indices[k][1]
 		z_max_index = 2*Y_indices[k][end]
-		# TODO: Don't fill with zeros -- it takes too long.
-		z = OffsetVector(zeros(z_length), z_min_index:z_max_index)
-		#= z[z_min_index:2:z_max_index] = parent(Y[k+1]) =#
+		z = OffsetVector(Array{Float64}(z_length), z_min_index:z_max_index)
 
 		# The even indices are inherited from the input. The odd indices are
 		# computed using the dilation equation
