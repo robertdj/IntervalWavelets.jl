@@ -2,6 +2,7 @@ module IntervalWavelets
 
 export 
     DyadicRational,
+    DyadicRationalVector,
 
     numerator,
     scale
