@@ -42,7 +42,7 @@ end
     end
 
     @testset "Wrong Dyadic Rationals vector" begin
-        @test_throws DomainError DyadicRationalVector(numerator, -scale)
+        @test_throws DomainError DyadicRationalVector(numerator, -scale - 1)
 
         @test_throws InexactError DyadicRationalVector(rand(2), scale)
         @test_throws InexactError DyadicRationalVector(numerator, rand())
