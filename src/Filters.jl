@@ -47,10 +47,10 @@ Base.length(h::InteriorFilter) = h |> filter |> length
 Base.getindex(h::InteriorFilter, idx) = filter(h)[idx]
 
 function Base.show(io::IO, h::InteriorFilter)
-	S = support(h)
+    left, right = support(h)
 	println(io, "Filter for Daubechies ", vanishing_moment(h), 
-			" scaling function on [", S[1], ", ", S[end], "]:")
-	show(io, h.filter)
+			" scaling function on [", left, ", ", right, "]:")
+    show(io, filter(h))
 end
 
 
@@ -62,7 +62,7 @@ Filter for Daubechies scaling function with `p` vanishing moments and `phase` be
 """
 function interior_filter(p::Integer, phase::Symbol=:symmlet)
 	if p < 1 
-		throw(DomainError())
+		throw(DomainError(p, "Interior filter must have at least 1 vanishing moment"))
 	end
 
     return InteriorFilter(p, Filter(interior_filter(p, Val{phase})))
@@ -70,7 +70,7 @@ end
 
 function interior_filter(p::Integer, ::Type{Val{:symmlet}})
     if !(2 <= p <= 8)
-        throw(DomainError())
+        throw(DomainError(p, "symmlet filter should have between 2 and 8 vanishing moments"))
     end
 
     OffsetArrays.OffsetVector(INTERIOR_COEFFICIENTS[p], -p+1:p)

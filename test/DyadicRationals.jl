@@ -4,7 +4,7 @@ using Test
 
 @testset "Dyadic Rationals" begin
     numerator = rand(-9:9)
-    scale = rand(0:9)
+    scale = rand(1:9)
 
     @testset "Construct Dyadic Rationals" begin 
         dr = DyadicRational(numerator, scale)

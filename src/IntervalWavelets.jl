@@ -13,7 +13,8 @@ export
     interior_filter,
     numerator,
     scale,
-    support
+    support,
+    vanishing_moment
 
 const sqrt2 = sqrt(2)
 
