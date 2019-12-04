@@ -8,7 +8,7 @@ using Test
     f = Filter(filter_coefficients)
     
     @test coefficients(f) == filter_coefficients
-    @test collect(support(f)) == -1:1
+    @test support(f) == (-1, 1)
     @test length(f) == 3
     
     @test f[-1] == filter_coefficients[-1]

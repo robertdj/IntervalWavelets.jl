@@ -5,14 +5,19 @@ struct Filter
 	coefficients::OffsetArrays.OffsetVector{Float64, Vector{Float64}}
 end
 
+function support(h::Filter)
+    integers_in_support = h |> coefficients |> LinearIndices |> collect
+
+    return integers_in_support[1], integers_in_support[end]
+end
 coefficients(h::Filter) = h.coefficients
-support(h::Filter) = h |> coefficients |> LinearIndices
-Base.length(h::Filter) = h |> support |> length
+Base.length(h::Filter) = h |> coefficients |> length
 
 function Base.show(io::IO, h::Filter)
 	show(io, coefficients(h))
 end
 
+# TODO: How to handle indices with more than one integer outside support?
 function Base.getindex(h::Filter, idx::Int)
 	if checkbounds(Bool, coefficients(h), idx)
 		return coefficients(h)[idx]
