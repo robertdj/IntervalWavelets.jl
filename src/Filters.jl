@@ -26,7 +26,7 @@ end
 # Functions and types for interacting with interior filters
 
 struct InteriorFilter
-	vanishing_moment::Int64
+	vanishing_moments::Int64
 	filter::Filter
 
 	function InteriorFilter(p, filter)
@@ -39,7 +39,7 @@ struct InteriorFilter
 end
 
 filter(h::InteriorFilter) = h.filter
-vanishing_moment(h::InteriorFilter) = h.vanishing_moment
+vanishing_moments(h::InteriorFilter) = h.vanishing_moments
 coefficients(h::InteriorFilter) = h |> filter |> coefficients
 support(h::InteriorFilter) = h |> filter |> support
 Base.length(h::InteriorFilter) = h |> filter |> length
@@ -48,7 +48,7 @@ Base.getindex(h::InteriorFilter, idx) = filter(h)[idx]
 
 function Base.show(io::IO, h::InteriorFilter)
     left, right = support(h)
-	println(io, "Filter for Daubechies ", vanishing_moment(h), 
+	println(io, "Filter for Daubechies ", vanishing_moments(h), 
 			" scaling function on [", left, ", ", right, "]:")
     show(io, filter(h))
 end

@@ -26,7 +26,7 @@ end
     @testset "Construct interior filters" begin
         for phase in [:min; :symmlet]
             h = interior_filter(p, phase)
-            @test vanishing_moment(h) == p
+            @test vanishing_moments(h) == p
             @test length(h) == 2*p
         end
     end
