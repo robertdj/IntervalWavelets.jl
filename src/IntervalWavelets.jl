@@ -14,7 +14,7 @@ export
     numerator,
     scale,
     support,
-    vanishing_moment
+    vanishing_moments
 
 const sqrt2 = sqrt(2)
 
@@ -23,5 +23,6 @@ include("Filters.jl")
 include("Filters/Interior.jl")
 include("Filters/Left.jl")
 include("Filters/Right.jl")
+include("InteriorScalingFunction.jl")
 
 end # module
