@@ -28,10 +28,8 @@ function interior_scaling_function(h::InteriorFilter)
     LinearAlgebra.rmul!(nonzero_function_values, 1/sum(nonzero_function_values))
     function_values = [0.0 ; nonzero_function_values ; 0.0]
 
-    # TODO: We may need support and support boundaries
-    support_begin, support_end = support(h)
     InteriorScalingFunction(
-        OffsetArrays.OffsetVector(function_values, support_begin:support_end), 
+        OffsetArrays.OffsetVector(function_values, support(h)), 
         vanishing_moments(h), 0
     )
 end

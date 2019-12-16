@@ -15,6 +15,7 @@ export
     numerator,
     scale,
     support,
+    support_boundaries,
     vanishing_moments
 
 const sqrt2 = sqrt(2)

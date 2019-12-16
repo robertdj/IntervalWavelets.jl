@@ -7,11 +7,16 @@ end
 
 function support(h::Filter)
     # TODO: Make this more high-level
-    filter_axes = h |> coefficients |> axes
-    integers_in_support = filter_axes[1].indices
-
-    return integers_in_support[1], integers_in_support[end]
+    integers_in_support = h |> coefficients |> axes
+    integers_in_support[1].indices
 end
+
+function support_boundaries(h::Filter)
+    filter_support = support(h)
+
+    return filter_support[1], filter_support[end]
+end
+
 coefficients(h::Filter) = h.coefficients
 Base.length(h::Filter) = h |> coefficients |> length
 
