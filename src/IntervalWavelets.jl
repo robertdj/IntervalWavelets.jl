@@ -1,6 +1,7 @@
 module IntervalWavelets
 
 import OffsetArrays
+import LinearAlgebra
 import Wavelets
 
 export 
@@ -24,5 +25,6 @@ include("Filters/Interior.jl")
 include("Filters/Left.jl")
 include("Filters/Right.jl")
 include("InteriorScalingFunction.jl")
+include("Misc.jl")
 
 end # module

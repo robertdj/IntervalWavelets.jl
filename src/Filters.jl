@@ -1,4 +1,4 @@
-# ------------------------------------------------------------
+# --------------------------------------------------------------------------------------------------
 # Functions and types for general filters
 
 struct Filter
@@ -6,7 +6,9 @@ struct Filter
 end
 
 function support(h::Filter)
-    integers_in_support = h |> coefficients |> LinearIndices |> collect
+    # TODO: Make this more high-level
+    filter_axes = h |> coefficients |> axes
+    integers_in_support = filter_axes[1].indices
 
     return integers_in_support[1], integers_in_support[end]
 end
@@ -27,7 +29,7 @@ function Base.getindex(h::Filter, idx::Int)
 end
 
 
-# ------------------------------------------------------------
+# --------------------------------------------------------------------------------------------------
 # Functions and types for interacting with interior filters
 
 struct InteriorFilter
