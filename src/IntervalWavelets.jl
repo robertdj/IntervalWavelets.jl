@@ -12,7 +12,9 @@ export
 
     coefficients,
     interior_filter,
+    interior_scaling_function,
     numerator,
+    reduce,
     scale,
     support,
     support_boundaries,

@@ -26,5 +26,44 @@ using Test
              0      0    h2[3]  h2[2] ]
     end
 
+
+    @testset "Construct interior scaling function" begin
+        h = interior_filter(2)
+        phi = interior_scaling_function(h)
+
+        @test collect(support(h)) == Integer.(support(phi))
+        @test vanishing_moments(phi) == 2
+        @test scale(phi) == 0
+
+
+        phi = interior_scaling_function(h, 1)
+
+        @test vanishing_moments(phi) == 2
+        @test scale(phi) == 1
+
+
+        #= @test interior_scaling_function(h) == interior_scaling_function(h, 0) =#
+
+        @test_throws DomainError interior_scaling_function(h, -1)
+        
+        # TODO: How to access the raw values of phi?
+    end
+
+
+    @testset "Increase resolution of interior scaling function" begin
+        h = interior_filter(2)
+        phi0 = interior_scaling_function(h)
+
+        phi0_support = support(phi0)
+        @test phi0_support == IntervalWavelets.all_dyadic_rationals(-1, 2, 0)
+
+        phi1 = IntervalWavelets.increase_resolution(phi0)
+        @test support(phi1) == IntervalWavelets.all_dyadic_rationals(-1, 2, 1)
+
+        @test phi1.(phi0_support) == phi0.(phi0_support)
+        for dr in phi0_support
+            @test phi1[dr] == phi0[dr]
+        end
+    end
 end
 
