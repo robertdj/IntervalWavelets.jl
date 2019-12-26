@@ -1,4 +1,4 @@
-struct DyadicRational
+struct DyadicRational <: AbstractFloat
     numerator::Int64
     R::Int64
 
@@ -51,6 +51,12 @@ function all_dyadic_rationals(left::Integer, right::Integer, R::Integer)
     end
 
     DyadicRational.(left*2^R:right*2^R, R)
+end
+
+
+function AbstractFloat(dr::DyadicRational)
+    # TODO: Can this be done with >> ?
+    numerator(dr) / 2.0^scale(dr)
 end
 
 

@@ -177,19 +177,17 @@ function dyadic_dilation_matrix(h::InteriorFilter)
 end
 
 
-
-#= @recipe function f(phi::InteriorScalingFunction) =#
-#=     seriestype := :path =#
-
-#=     values(phi) |> collect =#
-#= end =#
-
-
-
 function (phi::InteriorScalingFunction)(x::DyadicRational)
     phi[x]
 end
 
+
 function (phi::InteriorScalingFunction)(x::DyadicRational, J::Integer, k::Integer = 0)
 end
 
+
+@recipe function f(phi::InteriorScalingFunction)
+    seriestype := :path
+
+    float.(support(phi)), parent(values(phi))
+end

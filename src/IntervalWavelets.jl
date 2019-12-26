@@ -2,6 +2,7 @@ module IntervalWavelets
 
 import OffsetArrays
 import LinearAlgebra
+using RecipesBase
 import Wavelets
 
 export 
