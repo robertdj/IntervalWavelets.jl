@@ -10,7 +10,7 @@ end
 function InteriorScalingFunction(values, support, vanishing_moments, scale)
     InteriorScalingFunction(
         OffsetArrays.OffsetVector{Float64}(values, support[1]*2^scale:support[2]*2^scale),
-        vanishing_moments, R
+        vanishing_moments, scale
     )
 end
 
@@ -127,12 +127,12 @@ Increase the resolution of a DaubScaling scaling function by one.
 function increase_resolution(phi::InteriorScalingFunction)
     # TODO: Function to get all dyadic rationals in interval
     support_left, support_right = support_boundaries(phi.filter)
-    support2 = all_dyadic_rationals(support_left, support_right, scale(phi) + 1)
-
     R = scale(phi) + 1
+    support2 = all_dyadic_rationals(support_left, support_right, R)
+
     phi2 = InteriorScalingFunction(
         OffsetArrays.OffsetVector{Float64}(undef, support_left*2^R:support_right*2^R),
-        phi.filter, vanishing_moments(phi), scale(phi) + 1
+        filter(phi), vanishing_moments(phi), R
     )
 
     for (index, dr) in enumerate(support2)
@@ -167,7 +167,7 @@ function dyadic_dilation_matrix(h::InteriorFilter)
     H = Matrix{Float64}(undef, sz, sz)
     filter_coefficients = coefficients(h)
 
-    left_support = support(h)[1]
+    left_support = support_boundaries(h)[1]
     for col in 1:sz, row in 1:sz
         h_idx = 2*col - row + left_support
         H[col, row] = sqrt2 * h[h_idx]

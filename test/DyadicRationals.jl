@@ -43,8 +43,10 @@ using Test
 
     @testset "Convert Dyadic Rational" begin
         @test Integer(DyadicRational(3, 0)) == 3
+        @test_throws InexactError Integer(DyadicRational(3, 2))
 
-        @test_throws InexactError Integer(DyadicRational(3, 1))
+        @test float(DyadicRational(3, 0)) == 3.0
+        @test float(DyadicRational(3, 2)) == 0.75
     end
 end
 
