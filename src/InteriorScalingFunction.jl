@@ -189,5 +189,11 @@ end
 @recipe function f(phi::InteriorScalingFunction)
     seriestype := :path
 
-    float.(support(phi)), parent(values(phi))
+    x = phi |> support .|> float
+    y = phi |> values |> parent
+
+    @series begin
+        x, y
+    end
 end
+
