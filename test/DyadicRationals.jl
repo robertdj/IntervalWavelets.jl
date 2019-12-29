@@ -29,6 +29,8 @@ using Test
         @test DyadicRational(2, 1) + 1 == DyadicRational(4, 1)
 
         @test IntervalWavelets.reduce(DyadicRational(4, 1)) == DyadicRational(2, 0)
+        @test IntervalWavelets.reduce(DyadicRational(-4, 1)) == DyadicRational(-2, 0)
+        @test IntervalWavelets.reduce(DyadicRational(5, 1)) == DyadicRational(5, 1)
 
         @test 2 * DyadicRational(2, 0) == DyadicRational(4, 0)
         @test 3 * DyadicRational(1, 2) == DyadicRational(3, 2)

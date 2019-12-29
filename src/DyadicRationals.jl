@@ -33,15 +33,15 @@ function Base.Integer(dr::DyadicRational)
 end
 
 
+"""
+Reduce the fraction in a `DyadicRational`.
+"""
 function reduce(dr::DyadicRational)
-    common_factor = gcd(numerator(dr), 2^scale(dr))
+    largest_power_of_two_dividing_numerator = trailing_zeros(numerator(dr))
 
-    if ispow2(common_factor)
-        # TODO: prevpow instead of log2?
-        return DyadicRational(numerator(dr) / common_factor, scale(dr) - Int(log2(common_factor)))
-    end
+    common_power_of_two = min(scale(dr), largest_power_of_two_dividing_numerator)
 
-    return dr
+    DyadicRational(numerator(dr) >> common_power_of_two, scale(dr) - common_power_of_two)
 end
 
 
