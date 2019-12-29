@@ -1,5 +1,5 @@
 struct InteriorScalingFunction
-    values::OffsetArrays.OffsetVector{Float64}
+    values::OffsetArrays.OffsetVector{Float64, Vector{Float64}}
     filter::InteriorFilter
     # TODO: vanishing_moments is not needed when we have filter
     vanishing_moments::Int64
@@ -125,7 +125,6 @@ end
 Increase the resolution of a DaubScaling scaling function by one.
 """
 function increase_resolution(phi::InteriorScalingFunction)
-    # TODO: Function to get all dyadic rationals in interval
     support_left, support_right = support_boundaries(phi.filter)
     R = scale(phi) + 1
     support2 = all_dyadic_rationals(support_left, support_right, R)
