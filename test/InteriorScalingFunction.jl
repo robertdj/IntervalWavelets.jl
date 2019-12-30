@@ -1,4 +1,5 @@
 using IntervalWavelets
+using OffsetArrays
 using Test
 
 
@@ -42,11 +43,15 @@ using Test
         @test scale(phi) == 1
 
 
-        #= @test interior_scaling_function(h) == interior_scaling_function(h, 0) =#
-
         @test_throws DomainError interior_scaling_function(h, -1)
-        
-        # TODO: How to access the raw values of phi?
+    end
+
+
+    @testset "Specific interior scaling function" begin
+        h = interior_filter(2)
+        phi = interior_scaling_function(h, 1)
+
+        @test values(phi) ≈ OffsetVector([0.0, 0.93301, 1.36602, 0.0, -0.36602, 0.06698, 0.0], -2:4) atol = 10.0^-4
     end
 
 
