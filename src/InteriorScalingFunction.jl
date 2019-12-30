@@ -27,22 +27,23 @@ function support(phi::InteriorScalingFunction)
 end
 
 
-# TODO: Does it make more sense to have phi(dr) instead of phi[dr]?
-function Base.getindex(phi::InteriorScalingFunction, key::DyadicRational)
+function find_index(phi::InteriorScalingFunction, key::DyadicRational)
     key_scale = scale(key)
     phi_scale = scale(phi)
 
     if (phi_scale < key_scale)
-        key = reduce(key)
-        key_scale = scale(key)
-        if (phi_scale < key_scale)
-            throw(DomainError(key, "Scaling function not computed at this scale"))
-        end
+        throw(DomainError(key, "Scaling function not computed at this scale"))
     end
 
-    idx = numerator(key) * 2^(phi_scale - key_scale)
+    idx = numerator(key) << (phi_scale - key_scale)
+end
+
+
+function Base.getindex(phi::InteriorScalingFunction, key::DyadicRational)
+    idx = find_index(phi, key)
+
     if checkbounds(Bool, values(phi), idx)
-        return values(phi)[numerator(key) * 2^(phi_scale - key_scale)]
+        return values(phi)[idx]
     else
         return 0.0
     end
@@ -50,21 +51,8 @@ end
 
 
 function Base.setindex!(phi::InteriorScalingFunction, value::Float64, key::DyadicRational)
-    key_scale = scale(key)
-    phi_scale = scale(phi)
+    idx = find_index(phi, key)
 
-    if (phi_scale < key_scale)
-        key = reduce(key)
-        key_scale = scale(key)
-        if (phi_scale < key_scale)
-            throw(DomainError(key, "Scaling function not computed at this scale"))
-        end
-    end
-    #= if (phi_scale < key_scale) =#
-    #=     throw(DomainError(key, "Scaling function not computed at this scale")) =#
-    #= end =#
-
-    idx = numerator(key) * 2^(phi_scale - key_scale)
     if checkbounds(Bool, values(phi), idx)
         values(phi)[idx] = value
     else
@@ -134,6 +122,8 @@ function increase_resolution(phi::InteriorScalingFunction)
         filter(phi), vanishing_moments(phi), R
     )
 
+    h = filter(phi)
+
     for (index, dr) in enumerate(support2)
         if isodd(index)
             phi2[dr] = phi[dr]
@@ -141,8 +131,8 @@ function increase_resolution(phi::InteriorScalingFunction)
 
         if iseven(index)
             phi_val = 0.0
-            for j in support(phi.filter)
-                phi_val += sqrt2 * phi.filter[j] * phi[2 * dr - j]
+            for j in support(h)
+                phi_val += sqrt2 * h[j] * phi[2 * dr - j]
             end
 
             phi2[dr] = phi_val
@@ -176,6 +166,7 @@ function dyadic_dilation_matrix(h::InteriorFilter)
 end
 
 
+# TODO: Does it make more sense to have only phi(dr) instead of phi[dr]?
 function (phi::InteriorScalingFunction)(x::DyadicRational)
     phi[x]
 end
