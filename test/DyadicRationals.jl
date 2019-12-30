@@ -3,34 +3,23 @@ using Test
 
 
 @testset "Dyadic Rationals" begin
-    numerator = rand(-9:9)
-    scale = rand(1:9)
-
-
     @testset "Construct Dyadic Rationals" begin 
-        dr = DyadicRational(numerator, scale)
+        dr = DyadicRational(1, 2)
 
-        @test IntervalWavelets.numerator(dr) == numerator
-        @test IntervalWavelets.scale(dr) == scale
-    end
+        @test IntervalWavelets.numerator(dr) == 1
+        @test IntervalWavelets.scale(dr) == 2
 
+        @test DyadicRational(4, 1) == DyadicRational(2, 0)
+        @test DyadicRational(-4, 1) == DyadicRational(-2, 0)
+        @test DyadicRational(5, 1) == DyadicRational(5, 1)
 
-    @testset "Wrong Dyadic Rationals" begin
-        @test_throws DomainError DyadicRational(numerator, -scale)
-
-        @test_throws InexactError DyadicRational(rand(), scale)
-        @test_throws InexactError DyadicRational(numerator, rand())
-        @test_throws InexactError DyadicRational(rand(), rand())
+        @test_throws DomainError DyadicRational(1, -2)
     end
 
 
     @testset "Arithmetic with Dyadic Rationals" begin
         @test DyadicRational(2, 0) + 1 == DyadicRational(3, 0)
         @test DyadicRational(2, 1) + 1 == DyadicRational(4, 1)
-
-        @test IntervalWavelets.reduce(DyadicRational(4, 1)) == DyadicRational(2, 0)
-        @test IntervalWavelets.reduce(DyadicRational(-4, 1)) == DyadicRational(-2, 0)
-        @test IntervalWavelets.reduce(DyadicRational(5, 1)) == DyadicRational(5, 1)
 
         @test 2 * DyadicRational(2, 0) == DyadicRational(4, 0)
         @test 3 * DyadicRational(1, 2) == DyadicRational(3, 2)

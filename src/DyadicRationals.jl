@@ -4,10 +4,13 @@ struct DyadicRational <: AbstractFloat
 
     function DyadicRational(numerator, R)
         if R < 0
-            throw(DomainError(R, "Scale must be positive"))
+            throw(DomainError(R, "Scale must be non-negative"))
         end
 
-        new(numerator, R)
+        largest_power_of_two_dividing_numerator = trailing_zeros(numerator)
+        common_power_of_two = min(R, largest_power_of_two_dividing_numerator)
+
+        new(numerator >> common_power_of_two, R - common_power_of_two)
     end
 end
 
@@ -20,7 +23,13 @@ Base.:*(a::Integer, dr::DyadicRational) = DyadicRational(a * numerator(dr), scal
 
 
 function Base.show(io::IO, dr::DyadicRational)
-    print(io, numerator(dr), "/2^", scale(dr))
+    if scale(dr) == 0
+        print(io, numerator(dr))
+    elseif scale(dr) == 1
+        print(io, numerator(dr), "/2")
+    else
+        print(io, numerator(dr), "/2^", scale(dr))
+    end
 end
 
 
@@ -30,18 +39,6 @@ function Base.Integer(dr::DyadicRational)
     end
 
     numerator(dr)
-end
-
-
-"""
-Reduce the fraction in a `DyadicRational`.
-"""
-function reduce(dr::DyadicRational)
-    largest_power_of_two_dividing_numerator = trailing_zeros(numerator(dr))
-
-    common_power_of_two = min(scale(dr), largest_power_of_two_dividing_numerator)
-
-    DyadicRational(numerator(dr) >> common_power_of_two, scale(dr) - common_power_of_two)
 end
 
 
