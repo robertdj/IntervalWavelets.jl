@@ -47,11 +47,20 @@ using Test
     end
 
 
-    @testset "Specific interior scaling function" begin
+    @testset "Specific interior scaling functions" begin
         h = interior_filter(2)
         phi = interior_scaling_function(h, 1)
 
-        @test values(phi) ≈ OffsetVector([0.0, 0.93301, 1.36602, 0.0, -0.36602, 0.06698, 0.0], -2:4) atol = 10.0^-4
+        @test values(phi) ≈ OffsetVector([0.0 ; 0.93301 ; 1.36602 ; 0.0 ; -0.36602 ; 0.06698 ; 0.0], -2:4) atol = 10.0^-4
+
+
+        haar_filter = interior_filter(1, :min)
+
+        haar = interior_scaling_function(haar_filter)
+        @test values(haar) == OffsetVector([1.0 ; 0.0], 0:1)
+
+        haar = interior_scaling_function(haar_filter, 1)
+        @test values(haar) ≈ OffsetVector([1.0 ; 1.0 ; 0.0], 0:2)
     end
 
 

@@ -30,7 +30,7 @@ end
 
 
 # TODO: How to handle indices with more than one integer outside support?
-function Base.getindex(h::Filter, idx::Int)
+function Base.getindex(h::Filter, idx::Integer)
 	if checkbounds(Bool, coefficients(h), idx)
 		return coefficients(h)[idx]
 	else
@@ -50,7 +50,7 @@ struct InteriorFilter
 		if p >= 0
 			new(p, filter)
 		else
-			throw(AssertionError("Not a valid interior filter"))
+			throw(DomainError(p, "Not a valid number of vanishing moments"))
 		end
 	end
 end
@@ -67,7 +67,7 @@ Base.getindex(h::InteriorFilter, idx) = filter(h)[idx]
 
 
 function Base.show(io::IO, h::InteriorFilter)
-    left, right = support(h)
+    left, right = support_boundaries(h)
 	println(io, "Filter for Daubechies ", vanishing_moments(h), 
 			" scaling function on [", left, ", ", right, "]:")
     show(io, filter(h))

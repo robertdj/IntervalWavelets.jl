@@ -67,10 +67,9 @@ end
 Compute an interior scaling function in the integers in its support.
 """
 function interior_scaling_function(h::InteriorFilter)
-    # TODO: can InteriorFilter have 1 vanishing moment?
     if vanishing_moments(h) == 1
         # Haar
-        InteriorScalingFunction(OffsetArrays.OffsetVector([1.0; 0.0], 0:1), 1, 0)
+        return InteriorScalingFunction(OffsetArrays.OffsetVector([1.0; 0.0], 0:1), h, 1, 0)
     end
 
     H = dyadic_dilation_matrix(h)
@@ -113,7 +112,7 @@ end
 Increase the resolution of a DaubScaling scaling function by one.
 """
 function increase_resolution(phi::InteriorScalingFunction)
-    support_left, support_right = support_boundaries(phi.filter)
+    support_left, support_right = support_boundaries(filter(phi))
     R = scale(phi) + 1
     support2 = all_dyadic_rationals(support_left, support_right, R)
 
