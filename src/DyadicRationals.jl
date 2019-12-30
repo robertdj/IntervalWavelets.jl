@@ -17,8 +17,8 @@ end
 numerator(dr::DyadicRational) = dr.numerator
 scale(dr::DyadicRational) = dr.R
 
-Base.:+(dr::DyadicRational, k::Integer) = DyadicRational(numerator(dr) + 2^scale(dr) * k, scale(dr))
-Base.:-(dr::DyadicRational, k::Integer) = DyadicRational(numerator(dr) - 2^scale(dr) * k, scale(dr))
+Base.:+(dr::DyadicRational, k::Integer) = DyadicRational(numerator(dr) + (k << scale(dr)), scale(dr))
+Base.:-(dr::DyadicRational, k::Integer) = DyadicRational(numerator(dr) - (k << scale(dr)), scale(dr))
 Base.:*(a::Integer, dr::DyadicRational) = DyadicRational(a * numerator(dr), scale(dr))
 
 
@@ -52,7 +52,6 @@ end
 
 
 function AbstractFloat(dr::DyadicRational)
-    # TODO: Can this be done with >> ?
     numerator(dr) / 2.0^scale(dr)
 end
 
