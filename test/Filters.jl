@@ -24,20 +24,18 @@ end
 @testset "Interior filters" begin
     p = rand(2:8)
 
-    @testset "Construct interior filters" begin
-        for phase in [:min; :symmlet]
-            h = interior_filter(p, phase)
-            @test vanishing_moments(h) == p
-            @test length(h) == 2*p
-        end
+    @testset "Construct interior filters $phase" for phase in [:min, :symmlet]
+        h = interior_filter(p, phase)
+        @test vanishing_moments(h) == p
+        @test length(h) == 2*p
     end
 
-    @testset "Daubechies filters are normalized in l2" begin
-        for phase in [:min; :symmlet]
-            h = interior_filter(p, phase)
-            @test sum(coefficients(h).^2) ≈ 1 atol = sqrt(eps())
-        end
+
+    @testset "Daubechies filters are normalized in l2 $phase" for phase in [:min, :symmlet]
+        h = interior_filter(p, phase)
+        @test sum(coefficients(h).^2) ≈ 1 atol = sqrt(eps())
     end
+
 
     @testset "Failure constructing interior filters" begin
         @test_throws DomainError interior_filter(0, :symmlet)

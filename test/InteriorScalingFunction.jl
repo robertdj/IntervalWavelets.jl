@@ -1,4 +1,5 @@
 using IntervalWavelets
+using OffsetArrays
 using Test
 
 
@@ -26,5 +27,57 @@ using Test
              0      0    h2[3]  h2[2] ]
     end
 
+
+    @testset "Construct interior scaling function" begin
+        h = interior_filter(2)
+        phi = interior_scaling_function(h)
+
+        @test collect(support(h)) == Integer.(support(phi))
+        @test vanishing_moments(phi) == 2
+        @test scale(phi) == 0
+
+
+        phi = interior_scaling_function(h, 1)
+
+        @test vanishing_moments(phi) == 2
+        @test scale(phi) == 1
+
+
+        @test_throws DomainError interior_scaling_function(h, -1)
+    end
+
+
+    @testset "Specific interior scaling functions" begin
+        h = interior_filter(2)
+        phi = interior_scaling_function(h, 1)
+
+        @test values(phi) ≈ OffsetVector([0.0 ; 0.93301 ; 1.36602 ; 0.0 ; -0.36602 ; 0.06698 ; 0.0], -2:4) atol = 10.0^-4
+
+
+        haar_filter = interior_filter(1, :min)
+
+        haar = interior_scaling_function(haar_filter)
+        @test values(haar) == OffsetVector([1.0 ; 0.0], 0:1)
+
+        haar = interior_scaling_function(haar_filter, 1)
+        @test values(haar) ≈ OffsetVector([1.0 ; 1.0 ; 0.0], 0:2)
+    end
+
+
+    @testset "Increase resolution of interior scaling function" begin
+        h = interior_filter(2)
+        phi0 = interior_scaling_function(h)
+
+        phi0_support = support(phi0)
+        @test phi0_support == IntervalWavelets.all_dyadic_rationals(-1, 2, 0)
+
+        phi1 = IntervalWavelets.increase_resolution(phi0)
+        @test support(phi1) == IntervalWavelets.all_dyadic_rationals(-1, 2, 1)
+
+        @test phi1.(phi0_support) == phi0.(phi0_support)
+        for dr in phi0_support
+            @test phi1[dr] == phi0[dr]
+        end
+    end
 end
 

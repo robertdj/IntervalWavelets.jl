@@ -4,6 +4,8 @@ import OffsetArrays
 import LinearAlgebra
 import Wavelets
 
+using RecipesBase
+
 export 
     DyadicRational,
     DyadicRationalVector,
@@ -12,7 +14,9 @@ export
 
     coefficients,
     interior_filter,
+    interior_scaling_function,
     numerator,
+    reduce,
     scale,
     support,
     support_boundaries,
