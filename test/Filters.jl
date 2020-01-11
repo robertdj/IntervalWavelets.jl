@@ -45,3 +45,23 @@ end
     end
 end
 
+
+@testset "Boundary filters" begin
+    @testset "Construct boundary filter" for s in ['L', 'R']
+        p = 2
+
+        b = boundary_filters(p, s)
+        @test side(b) == s
+        @test vanishing_moments(b) == p
+        @test length(filters(b)) == p
+    end
+
+
+    @testset "Failure constructing boundary filter" begin
+        @test_throws DomainError boundary_filters(0, 'L')
+        @test_throws DomainError boundary_filters(9, 'L')
+
+        @test_throws DomainError boundary_filters(2, 'I')
+    end
+end
+

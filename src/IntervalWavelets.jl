@@ -11,9 +11,11 @@ export
     DyadicRationalVector,
     Filter,
     InteriorFilter,
+    BoundaryFilter,
 
     coefficients,
     interior_filter,
+    boundary_filters,
     interior_scaling_function,
     numerator,
     reduce,

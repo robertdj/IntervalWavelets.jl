@@ -47,11 +47,11 @@ struct InteriorFilter
 	filter::Filter
 
 	function InteriorFilter(p, filter)
-		if p >= 0
-			new(p, filter)
-		else
+        if p < 0
 			throw(DomainError(p, "Not a valid number of vanishing moments"))
-		end
+        end
+
+        new(p, filter)
 	end
 end
 
@@ -100,5 +100,46 @@ end
 
 function interior_filter(p::Integer, ::Type{Val{:min}})
     OffsetArrays.OffsetVector(Wavelets.wavelet(Wavelets.WT.Daubechies{p}()).qmf, 0:2*p-1)
+end
+
+
+# --------------------------------------------------------------------------------------------------
+# Functions and types for interacting with boundary filters
+
+struct BoundaryFilters
+    side::Char
+    vanishing_moments::Int64
+    filters::Vector{Filter}
+
+    function BoundaryFilters(side, p, filters)
+        if !(2 <= p <= 8)
+			throw(DomainError(p, "Not a valid number of vanishing moments"))
+        end
+
+        if side != 'L' && side != 'R'
+            throw(DomainError(side, "Side should be either 'L' or 'R'"))
+        end
+
+        new(side, p, filters)
+    end
+end
+
+side(B::BoundaryFilters) = B.side
+vanishing_moments(B::BoundaryFilters) = B.vanishing_moments
+filters(B::BoundaryFilters) = B.filters
+
+function boundary_filters(p::Integer, side::Char)
+    supports = [0:(p + 2*k) for k in 0:(p - 1)]
+
+    if side == 'L'
+        coefficients = map(OffsetArrays.OffsetVector, LEFT_SCALING_COEFFICIENTS[p], supports)
+    elseif side == 'R'
+        coefficients = map(OffsetArrays.OffsetVector, RIGHT_SCALING_COEFFICIENTS[p], supports)
+    else
+        throw(ArgumentError("Side should be either 'L' or 'R'"))
+    end
+
+    filters = map(Filter, coefficients)
+    return BoundaryFilters(side, p, filters)
 end
 
