@@ -47,7 +47,7 @@ end
 
 
 @testset "Boundary filters" begin
-    @testset "Construct boundary filter" for s in ['L', 'R']
+    @testset "Construct boundary filter" for s in [IntervalWavelets.LEFT, IntervalWavelets.RIGHT]
         p = 2
 
         b = boundary_filters(p, s)
@@ -58,10 +58,8 @@ end
 
 
     @testset "Failure constructing boundary filter" begin
-        @test_throws DomainError boundary_filters(0, 'L')
-        @test_throws DomainError boundary_filters(9, 'L')
-
-        @test_throws DomainError boundary_filters(2, 'I')
+        @test_throws DomainError boundary_filters(0, IntervalWavelets.LEFT)
+        @test_throws DomainError boundary_filters(9, IntervalWavelets.LEFT)
     end
 end
 

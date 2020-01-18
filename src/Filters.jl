@@ -107,36 +107,45 @@ end
 # Functions and types for interacting with boundary filters
 
 struct BoundaryFilters
-    side::Char
+    side::Sides
     vanishing_moments::Int64
     filters::Vector{Filter}
 
     function BoundaryFilters(side, p, filters)
         if !(2 <= p <= 8)
-			throw(DomainError(p, "Not a valid number of vanishing moments"))
-        end
-
-        if side != 'L' && side != 'R'
-            throw(DomainError(side, "Side should be either 'L' or 'R'"))
+            throw(DomainError(p, "Vanishing moments should be between 2 and 8"))
         end
 
         new(side, p, filters)
     end
 end
 
+
 side(B::BoundaryFilters) = B.side
 vanishing_moments(B::BoundaryFilters) = B.vanishing_moments
 filters(B::BoundaryFilters) = B.filters
 
-function boundary_filters(p::Integer, side::Char)
+
+function Base.getindex(B::BoundaryFilters, idx::Integer)
+    filters(B)[idx + 1]
+end
+
+
+function boundary_filters(p::Integer, side::Sides)
+    if !(2 <= p <= 8)
+        throw(DomainError(p, "Vanishing moments should be between 2 and 8"))
+    end
+
     supports = [0:(p + 2*k) for k in 0:(p - 1)]
 
-    if side == 'L'
+    if side == LEFT
+    #= if side == 'L' =#
         coefficients = map(OffsetArrays.OffsetVector, LEFT_SCALING_COEFFICIENTS[p], supports)
-    elseif side == 'R'
+    elseif side == RIGHT
+    #= elseif side == 'R' =#
         coefficients = map(OffsetArrays.OffsetVector, RIGHT_SCALING_COEFFICIENTS[p], supports)
     else
-        throw(ArgumentError("Side should be either 'L' or 'R'"))
+        throw(DomainError("Side should be either LEFT or RIGHT"))
     end
 
     filters = map(Filter, coefficients)
