@@ -133,7 +133,6 @@ function increase_resolution(phi::InteriorScalingFunction)
         if isodd(index)
             phi2[dr] = phi[dr]
         else
-        #= elseif iseven(index) =#
             phi_val = 0.0
             for j in support(h)
                 phi_val += sqrt2 * h[j] * phi[2*dr - j]

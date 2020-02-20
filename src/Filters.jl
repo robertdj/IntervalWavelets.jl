@@ -139,10 +139,8 @@ function boundary_filters(p::Integer, side::Sides)
     supports = [0:(p + 2*k) for k in 0:(p - 1)]
 
     if side == LEFT
-    #= if side == 'L' =#
         coefficients = map(OffsetArrays.OffsetVector, LEFT_SCALING_COEFFICIENTS[p], supports)
     elseif side == RIGHT
-    #= elseif side == 'R' =#
         coefficients = map(OffsetArrays.OffsetVector, RIGHT_SCALING_COEFFICIENTS[p], supports)
     else
         throw(DomainError("Side should be either LEFT or RIGHT"))
