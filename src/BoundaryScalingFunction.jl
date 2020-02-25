@@ -79,16 +79,16 @@ scale(Phi::BoundaryScalingFunctions) = Phi.scale
 Base.getindex(Phi::BoundaryScalingFunctions, idx::Integer) = functions(Phi)[idx + 1]
 
 
-function initialize_boundary_scaling_functions(b::BoundaryFilters, phi::InteriorScalingFunction)
+function initialize_boundary_scaling_functions(b::BoundaryFilters, phi::InteriorScalingFunction, R::Integer)
     p = vanishing_moments(b)
 
     if side(b) == LEFT
     Y = [LeftScalingFunction(
-            OffsetArrays.OffsetVector{Float64}(undef, 0:p + k), p, k, 0
+            OffsetArrays.OffsetVector{Float64}(undef, 0:2^R*(p + k)), p, k, R
         ) for k = 0:p - 1]
     elseif side(b) == RIGHT
     Y = [RightScalingFunction(
-            OffsetArrays.OffsetVector{Float64}(undef, -(p + k):0), p, k, 0
+            OffsetArrays.OffsetVector{Float64}(undef, -2^R*(p + k):0), p, k, R
         ) for k = 0:p - 1]
     end
 
@@ -119,7 +119,7 @@ end
 
 
 function boundary_scaling_functions(b::BoundaryFilters, phi::InteriorScalingFunction)
-    Phi = initialize_boundary_scaling_functions(b, phi)
+    Phi = initialize_boundary_scaling_functions(b, phi, 0)
 
     p = vanishing_moments(Phi)
 
@@ -143,7 +143,6 @@ function boundary_scaling_functions(b::BoundaryFilters, phi::InteriorScalingFunc
                 phi_val += filters(Phi)[k][m] * phi(2*x - interior_translation(m, side(b)))
             end
 
-            # TODO: Move sqrt2 here
             Phi[k][x] = sqrt2 * phi_val
         end
     end
