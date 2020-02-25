@@ -37,7 +37,7 @@ function find_index(phi::AbstractScalingFunction, key::DyadicRational)
     phi_scale = scale(phi)
 
     if (phi_scale < key_scale)
-        throw(DomainError(key, "Scaling function not computed at this scale"))
+        throw(DomainError(key, "Scaling function not computed at this resolution"))
     end
 
     idx = numerator(key) << (phi_scale - key_scale)
@@ -129,16 +129,16 @@ function increase_resolution(phi::InteriorScalingFunction)
 
     h = filter(phi)
 
-    for (index, dr) in enumerate(support2)
+    for (index, x) in enumerate(support2)
         if isodd(index)
-            phi2[dr] = phi[dr]
+            phi2[x] = phi[x]
         else
             phi_val = 0.0
             for j in support(h)
-                phi_val += sqrt2 * h[j] * phi[2*dr - j]
+                phi_val += h[j] * phi[2*x - j]
             end
 
-            phi2[dr] = phi_val
+            phi2[x] = sqrt2 * phi_val
         end
     end
 
