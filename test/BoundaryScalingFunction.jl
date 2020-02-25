@@ -26,12 +26,7 @@ end
 
 @testset "Boundary scaling functions" begin
     @testset "Specific boundary scaling functions at $side and resolution $R" for side in [IntervalWavelets.LEFT, IntervalWavelets.RIGHT], R in 0:1
-        h = interior_filter(2)
-        phi = interior_scaling_function(h, 1)
-
-        l = boundary_filters(2, side)
-
-        phi = boundary_scaling_functions(l, phi, R)
+        phi = boundary_scaling_functions(side, 2, R)
 
         @test phi[0].(support(phi[0])) ≈ expected_boundary_function_values(side, R, 0) atol = 10.0^-4
         @test phi[1].(support(phi[1])) ≈ expected_boundary_function_values(side, R, 1) atol = 10.0^-4
@@ -39,16 +34,17 @@ end
 
 
     @testset "Increase resolution of boundary scaling function" begin
-        #= h = interior_filter(2) =#
-        #= phi0 = interior_scaling_function(h) =#
+        side = IntervalWavelets.LEFT
+        R = 1
+        phi = boundary_scaling_functions(side, 2, 0)
 
-        #= phi0_support = support(phi0) =#
-        #= @test phi0_support == IntervalWavelets.all_dyadic_rationals(-1, 2, 0) =#
+        phi0_support = support(phi[0])
+        @test phi0_support == IntervalWavelets.all_dyadic_rationals(0, 2, 0)
 
-        #= phi1 = IntervalWavelets.increase_resolution(phi0) =#
-        #= @test support(phi1) == IntervalWavelets.all_dyadic_rationals(-1, 2, 1) =#
+        phi1 = IntervalWavelets.increase_resolution(phi)
+        @test support(phi1[0]) == IntervalWavelets.all_dyadic_rationals(0, 2, 1)
 
-        #= @test phi1.(phi0_support) == phi0.(phi0_support) =#
+        @test phi1[0].(phi0_support) == phi[0].(phi0_support)
     end
 end
 
