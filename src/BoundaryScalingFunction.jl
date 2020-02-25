@@ -168,6 +168,16 @@ end
 end
 
 
+function boundary_scaling_functions(side::Sides, p::Integer, R::Integer)
+    h = interior_filter(p)
+    phi = interior_scaling_function(h, R)
+
+    b = boundary_filters(p, side)
+
+    boundary_scaling_functions(b, phi, R)
+end
+
+
 function boundary_scaling_functions(b::BoundaryFilters, phi::InteriorScalingFunction, R::Integer)
     if R < 0
         throw(DomainError(R, "Resolution must be non-negative"))
