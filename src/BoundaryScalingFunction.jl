@@ -44,8 +44,8 @@ end
 (phi::RightScalingFunction)(x::DyadicRational) = value(phi, x)
 
 
-struct BoundaryScalingFunctions
-    functions::Vector{AbstractBoundaryScalingFunction}
+struct BoundaryScalingFunctions{T <: AbstractBoundaryScalingFunction}
+    functions::Vector{T}
     filters::BoundaryFilters
     phi::InteriorScalingFunction
     # TODO: vanishing_moments is not needed when we have filter
@@ -102,6 +102,16 @@ function support_union(Phi::BoundaryScalingFunctions)
 end
 
 
+function sorted_support_union(Phi::BoundaryScalingFunctions{LeftScalingFunction})
+    support_union(Phi) |> reverse
+end
+
+
+function sorted_support_union(Phi::BoundaryScalingFunctions{RightScalingFunction})
+    support_union(Phi)
+end
+
+
 function supports(Phi::BoundaryScalingFunctions)::Vector{Vector{DyadicRational}}
     p = vanishing_moments(Phi)
     [support(Phi[k]) for k = 0:p - 1]
@@ -113,8 +123,7 @@ function boundary_scaling_functions(b::BoundaryFilters, phi::InteriorScalingFunc
 
     p = vanishing_moments(Phi)
 
-    # TODO: Fix for right side
-    support_values = support_union(Phi) |> reverse
+    support_values = sorted_support_union(Phi)
 
     for x in support_values
         for k in p-1:-1:0
@@ -126,15 +135,16 @@ function boundary_scaling_functions(b::BoundaryFilters, phi::InteriorScalingFunc
 
             # Boundary contribution
             for l in 0:p - 1
-                phi_val += sqrt2 * filters(Phi)[k][l] * Phi[l](2*x)
+                phi_val += filters(Phi)[k][l] * Phi[l](2*x)
             end
             
             # Interior contribution
             for m in p:p + 2k
-                phi_val += sqrt2 * filters(Phi)[k][m] * phi(2*x - m)
+                phi_val += filters(Phi)[k][m] * phi(2*x - interior_translation(m, side(b)))
             end
 
-            Phi[k][x] = phi_val
+            # TODO: Move sqrt2 here
+            Phi[k][x] = sqrt2 * phi_val
         end
     end
 
@@ -146,5 +156,14 @@ function boundary_scaling_functions(b::BoundaryFilters, phi::InteriorScalingFunc
     end
 
     return Phi
+end
+
+
+@inline function interior_translation(m::Integer, side::Sides)
+    if side == LEFT
+        return m
+    elseif side == RIGHT
+        return -m - 1
+    end
 end
 

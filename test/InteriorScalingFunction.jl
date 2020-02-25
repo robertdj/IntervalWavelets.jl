@@ -52,8 +52,10 @@ using Test
         phi = interior_scaling_function(h, 1)
 
         @test phi.(support(phi)) ≈ [0.0 ; 0.93301 ; 1.36602 ; 0.0 ; -0.36602 ; 0.06698 ; 0.0] atol = 10.0^-4
+    end
 
 
+    @testset "Haar scaling functions" begin
         haar_filter = interior_filter(1, :min)
 
         haar = interior_scaling_function(haar_filter)
