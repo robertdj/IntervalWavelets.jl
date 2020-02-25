@@ -74,8 +74,9 @@ end
 functions(Phi::BoundaryScalingFunctions) = Phi.functions
 filters(Phi::BoundaryScalingFunctions) = Phi.filters
 vanishing_moments(Phi::BoundaryScalingFunctions) = Phi.vanishing_moments
+interior(Phi::BoundaryScalingFunctions) = Phi.phi
 side(Phi::BoundaryScalingFunctions) = Phi.side
-scale(Phi::BoundaryScalingFunctions) = Phi.scale
+resolution(Phi::BoundaryScalingFunctions) = Phi.scale
 Base.getindex(Phi::BoundaryScalingFunctions, idx::Integer) = functions(Phi)[idx + 1]
 
 
@@ -92,7 +93,7 @@ function initialize_boundary_scaling_functions(b::BoundaryFilters, phi::Interior
         ) for k = 0:p - 1]
     end
 
-    BoundaryScalingFunctions(Y, b, phi, p, 0, side(b))
+    BoundaryScalingFunctions(Y, b, phi, p, R, side(b))
 end
 
 
@@ -164,5 +165,63 @@ end
     elseif side == RIGHT
         return -m - 1
     end
+end
+
+
+function boundary_scaling_functions(b::BoundaryFilters, phi::InteriorScalingFunction, R::Integer)
+    if R < 0
+        throw(DomainError(R, "Resolution must be non-negative"))
+    end
+
+    Phi = boundary_scaling_functions(b::BoundaryFilters, phi::InteriorScalingFunction)
+
+    for _ = 1:R
+        Phi = increase_resolution(Phi)
+    end
+
+    #= if R > 1 =#
+    #=     compute_value_at_0!(Phi) =#
+    #= end =#
+
+    return Phi
+end
+
+
+function increase_resolution(Phi::BoundaryScalingFunctions)
+    phi = interior(Phi)
+    Phi2 = initialize_boundary_scaling_functions(filters(Phi), phi, resolution(Phi) + 1)
+
+    p = vanishing_moments(Phi)
+
+    support_values = support_union(Phi2)
+
+    for (index, x) in enumerate(support_values)
+        for k in p-1:-1:0
+            if x ∉ support(Phi2[k])
+                continue
+            end
+
+            if isodd(index)
+                Phi2[k][x] = Phi[k][x]
+                continue
+            end
+
+            phi_val = 0.0
+
+            # Boundary contribution
+            for l in 0:p - 1
+                phi_val += filters(Phi)[k][l] * Phi[l](2*x)
+            end
+            
+            # Interior contribution
+            for m in p:p + 2k
+                phi_val += filters(Phi)[k][m] * phi(2*x - interior_translation(m, side(Phi)))
+            end
+
+            Phi2[k][x] = sqrt2 * phi_val
+        end
+    end
+
+    return Phi2
 end
 

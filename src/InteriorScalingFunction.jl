@@ -98,7 +98,7 @@ Compute an interior scaling function in the dyadic rationals of scale `R` in its
 """
 function interior_scaling_function(h::InteriorFilter, R::Integer)
     if R < 0
-        throw(DomainError(R, "Scale must be positive"))
+        throw(DomainError(R, "Resolution must be non-negative"))
     end
 
     phi = interior_scaling_function(h)

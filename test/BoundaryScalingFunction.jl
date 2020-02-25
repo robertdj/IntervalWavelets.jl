@@ -1,31 +1,40 @@
 using IntervalWavelets
 using Test
 
-
-@testset "Boundary scaling functions" begin
-    @testset "Specific left boundary scaling functions" begin
-        h = interior_filter(2)
-        phi = interior_scaling_function(h, 1)
-
-        l = boundary_filters(2, IntervalWavelets.LEFT)
-
-        phi_left = boundary_scaling_functions(l, phi)
-
-        @test phi_left[0].(support(phi_left[0])) ≈ [0.0 ; -1.1266 ; 0.0] atol = 10.0^-4
-        @test phi_left[1].(support(phi_left[1])) ≈ [0.0 ; 1.40586 ; -0.365497 ; 0.0] atol = 10.0^-4
+function expected_boundary_function_values(side, R, index)
+    value = if side == IntervalWavelets.LEFT
+        if index == 0
+            [0.0 ; 0.412364 ; -1.1266 ; 0.206182 ; 0.0] 
+        elseif index == 1
+            [0.0 ; 0.849475 ; 1.40586 ; -0.00765026 ; -0.365497 ; 0.0668906 ; 0.0]
+        end
+    elseif side == IntervalWavelets.RIGHT
+        if index == 0
+            [0.0 ; 0.445077 ; 0.651639 ; 0.890155 ; 0.0]
+        elseif index == 1
+            [0.0 ; 0.856098 ; 1.25341 ; 0.327042 ; 0.142971 ; -0.14055 ; 0.0]
+        end
     end
 
+    if R == 0
+        return value[1:2:end]
+    elseif R == 1
+        return value
+    end
+end
 
-    @testset "Specific right boundary scaling functions" begin
+
+@testset "Boundary scaling functions" begin
+    @testset "Specific boundary scaling functions at $side and resolution $R" for side in [IntervalWavelets.LEFT, IntervalWavelets.RIGHT], R in 0:1
         h = interior_filter(2)
         phi = interior_scaling_function(h, 1)
 
-        r = boundary_filters(2, IntervalWavelets.RIGHT)
+        l = boundary_filters(2, side)
 
-        phi_right = boundary_scaling_functions(r, phi)
+        phi = boundary_scaling_functions(l, phi, R)
 
-        @test phi_right[0].(support(phi_right[0])) ≈ [0.0 ; 0.6516 ; 0.0] atol = 10.0^-4
-        @test phi_right[1].(support(phi_right[1])) ≈ [0.0 ; 1.2534 ; 0.14297 ; 0.0] atol = 10.0^-4
+        @test phi[0].(support(phi[0])) ≈ expected_boundary_function_values(side, R, 0) atol = 10.0^-4
+        @test phi[1].(support(phi[1])) ≈ expected_boundary_function_values(side, R, 1) atol = 10.0^-4
     end
 
 
