@@ -193,9 +193,7 @@ function boundary_scaling_functions(b::BoundaryFilters, phi::InteriorScalingFunc
         Phi = increase_resolution(Phi)
     end
 
-    #= if R > 1 =#
-    #=     compute_value_at_0!(Phi) =#
-    #= end =#
+    compute_edge_value!(Phi)
 
     return Phi
 end
@@ -237,6 +235,33 @@ function increase_resolution(Phi::BoundaryScalingFunctions)
     end
 
     return Phi2
+end
+
+
+function compute_edge_value!(Phi)
+    p = vanishing_moments(Phi)
+    if resolution(Phi) < ceil(log2(p))
+        return Phi
+    end
+
+    R = resolution(Phi)
+    x = DyadicRational.(1:p, R)
+
+    representation_matrix = [Phi[j](x[i]) for i = 1:p, j = 0:p - 1]
+    basis_coeff = representation_matrix \ ones(p)
+
+    filter_matrix = [sqrt2 * filters(Phi)[i][j] for i = 0:p - 1, j = 0:p - 1]
+    scaled_function_values = eigval1(filter_matrix)
+
+    scaling_factor = LinearAlgebra.dot(basis_coeff, scaled_function_values)
+
+    function_values = scaled_function_values ./ scaling_factor
+
+    for (index, phi) in enumerate(Phi.functions)
+        Phi.functions[index][DyadicRational(0,0)] = function_values[index]
+    end
+
+    return Phi
 end
 
 
