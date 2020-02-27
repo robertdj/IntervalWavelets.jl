@@ -79,6 +79,10 @@ side(Phi::BoundaryScalingFunctions) = Phi.side
 resolution(Phi::BoundaryScalingFunctions) = Phi.scale
 Base.getindex(Phi::BoundaryScalingFunctions, idx::Integer) = functions(Phi)[idx + 1]
 
+Base.iterate(Phi::BoundaryScalingFunctions) = Phi[0], 0
+Base.iterate(Phi::BoundaryScalingFunctions, state) = state > length(Phi) ? nothing : (Phi[state], state + 1)
+Base.length(Phi::BoundaryScalingFunctions) = length(functions(Phi)) - 1
+
 
 function initialize_boundary_scaling_functions(b::BoundaryFilters, phi::InteriorScalingFunction, R::Integer)
     p = vanishing_moments(b)
@@ -237,7 +241,7 @@ end
 
 
 @recipe function f(phi::BoundaryScalingFunctions)
-    for y in phi.functions
+    for y in phi
         @series begin
             collect(y)
         end
