@@ -178,15 +178,17 @@ end
 function (phi::InteriorScalingFunction)(x::DyadicRational, J::Integer, k::Integer = 0)
 end
 
-
-@recipe function f(phi::InteriorScalingFunction)
-    seriestype := :path
-
+function Base.collect(phi::AbstractScalingFunction)
     x = phi |> support .|> float
     y = phi |> values |> parent
 
-    @series begin
-        x, y
-    end
+    return x, y
+end
+
+
+@recipe function f(phi::AbstractScalingFunction)
+    seriestype := :path
+
+    collect(phi)
 end
 

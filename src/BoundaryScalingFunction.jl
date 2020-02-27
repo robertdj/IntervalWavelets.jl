@@ -235,3 +235,12 @@ function increase_resolution(Phi::BoundaryScalingFunctions)
     return Phi2
 end
 
+
+@recipe function f(phi::BoundaryScalingFunctions)
+    for y in phi.functions
+        @series begin
+            collect(y)
+        end
+    end
+end
+
