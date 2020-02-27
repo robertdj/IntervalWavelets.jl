@@ -13,6 +13,8 @@ export
     InteriorFilter,
     BoundaryFilter,
     Sides,
+    LEFT,
+    RIGHT,
 
     boundary_filters,
     boundary_scaling_functions,
