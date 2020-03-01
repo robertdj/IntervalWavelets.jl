@@ -240,13 +240,12 @@ end
 
 function compute_edge_value!(Phi)
     p = vanishing_moments(Phi)
-    if resolution(Phi) <= ceil(log2(p))
+    R = resolution(Phi)
+    if R <= ceil(log2(p))
         return Phi
     end
 
-    R = resolution(Phi)
-    x = sorted_support_union(Phi)[end - p - 1:end]
-
+    x = sign(side(Phi)) * DyadicRational.(1:p, R)
     representation_matrix = [Phi[j](x[i]) for i = 1:p, j = 0:p - 1]
     basis_coeff = representation_matrix \ ones(p)
 

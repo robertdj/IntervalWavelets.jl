@@ -32,13 +32,8 @@ export
 
 const sqrt2 = sqrt(2)
 
-# TODO: How to use this enum in a good way? In its own module?
-@enum Sides begin
-    LEFT
-    RIGHT
-end
-
 include("DyadicRationals.jl")
+include("Enums.jl")
 include("Filters.jl")
 include("Filters/Interior.jl")
 include("Filters/Left.jl")
