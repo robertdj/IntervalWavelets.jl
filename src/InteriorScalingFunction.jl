@@ -132,14 +132,15 @@ function increase_resolution(phi::InteriorScalingFunction)
     for (index, x) in enumerate(support2)
         if isodd(index)
             phi2[x] = phi[x]
-        else
-            phi_val = 0.0
-            for j in support(h)
-                phi_val += h[j] * phi[2*x - j]
-            end
-
-            phi2[x] = sqrt2 * phi_val
+            continue
         end
+
+        phi_val = 0.0
+        for j in support(h)
+            phi_val += h[j] * phi[2*x - j]
+        end
+
+        phi2[x] = sqrt2 * phi_val
     end
 
     return phi2

@@ -205,21 +205,14 @@ function increase_resolution(Phi::BoundaryScalingFunctions)
 
     p = vanishing_moments(Phi)
 
-    support_values = support_union(Phi2)
-
-    for (index, x) in enumerate(support_values)
-        for k in p-1:-1:0
-            if x ∉ support(Phi2[k])
-                continue
-            end
-
+    for k in 0:p - 1
+        for (index, x) in enumerate(support(Phi2[k]))
             if isodd(index)
                 Phi2[k][x] = Phi[k][x]
                 continue
             end
 
             phi_val = 0.0
-
             # Boundary contribution
             for l in 0:p - 1
                 phi_val += filters(Phi)[k][l] * Phi[l](2*x)
