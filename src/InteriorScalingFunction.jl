@@ -1,4 +1,7 @@
-struct InteriorScalingFunction
+abstract type AbstractScalingFunction end
+
+
+struct InteriorScalingFunction <: AbstractScalingFunction
     values::OffsetArrays.OffsetVector{Float64, Vector{Float64}}
     filter::InteriorFilter
     # TODO: vanishing_moments is not needed when we have filter
@@ -15,31 +18,33 @@ function InteriorScalingFunction(values, support, vanishing_moments, scale)
 end
 
 
-Base.values(phi::InteriorScalingFunction) = phi.values
+Base.values(phi::AbstractScalingFunction) = phi.values
 filter(phi::InteriorScalingFunction) = phi.filter
-vanishing_moments(phi::InteriorScalingFunction) = phi.vanishing_moments
-scale(phi::InteriorScalingFunction) = phi.scale
+vanishing_moments(phi::AbstractScalingFunction) = phi.vanishing_moments
+scale(phi::AbstractScalingFunction) = phi.scale
+support_boundaries(phi::InteriorScalingFunction) = support_boundaries(filter(phi))
 
 
-function support(phi::InteriorScalingFunction)
+function support(phi::AbstractScalingFunction)
+    # TODO: Prettify
     #= DyadicRationalVector(axes(values(phi))[1].indices, scale(phi)) =#
     DyadicRational.(axes(values(phi))[1].indices, scale(phi))
 end
 
 
-function find_index(phi::InteriorScalingFunction, key::DyadicRational)
+function find_index(phi::AbstractScalingFunction, key::DyadicRational)
     key_scale = scale(key)
     phi_scale = scale(phi)
 
     if (phi_scale < key_scale)
-        throw(DomainError(key, "Scaling function not computed at this scale"))
+        throw(DomainError(key, "Scaling function not computed at this resolution"))
     end
 
     idx = numerator(key) << (phi_scale - key_scale)
 end
 
 
-function Base.getindex(phi::InteriorScalingFunction, key::DyadicRational)
+function Base.getindex(phi::AbstractScalingFunction, key::DyadicRational)
     idx = find_index(phi, key)
 
     if checkbounds(Bool, values(phi), idx)
@@ -50,7 +55,7 @@ function Base.getindex(phi::InteriorScalingFunction, key::DyadicRational)
 end
 
 
-function Base.setindex!(phi::InteriorScalingFunction, value::Float64, key::DyadicRational)
+function Base.setindex!(phi::AbstractScalingFunction, value::Float64, key::DyadicRational)
     idx = find_index(phi, key)
 
     if checkbounds(Bool, values(phi), idx)
@@ -93,7 +98,7 @@ Compute an interior scaling function in the dyadic rationals of scale `R` in its
 """
 function interior_scaling_function(h::InteriorFilter, R::Integer)
     if R < 0
-        throw(DomainError(R, "Scale must be positive"))
+        throw(DomainError(R, "Resolution must be non-negative"))
     end
 
     phi = interior_scaling_function(h)
@@ -112,6 +117,7 @@ end
 Increase the resolution of a DaubScaling scaling function by one.
 """
 function increase_resolution(phi::InteriorScalingFunction)
+    # TODO: Function for initializing phi?
     support_left, support_right = support_boundaries(filter(phi))
     R = scale(phi) + 1
     support2 = all_dyadic_rationals(support_left, support_right, R)
@@ -123,19 +129,18 @@ function increase_resolution(phi::InteriorScalingFunction)
 
     h = filter(phi)
 
-    for (index, dr) in enumerate(support2)
+    for (index, x) in enumerate(support2)
         if isodd(index)
-            phi2[dr] = phi[dr]
+            phi2[x] = phi[x]
+            continue
         end
 
-        if iseven(index)
-            phi_val = 0.0
-            for j in support(h)
-                phi_val += sqrt2 * h[j] * phi[2 * dr - j]
-            end
-
-            phi2[dr] = phi_val
+        phi_val = 0.0
+        for j in support(h)
+            phi_val += h[j] * phi[2*x - j]
         end
+
+        phi2[x] = sqrt2 * phi_val
     end
 
     return phi2
@@ -174,15 +179,17 @@ end
 function (phi::InteriorScalingFunction)(x::DyadicRational, J::Integer, k::Integer = 0)
 end
 
-
-@recipe function f(phi::InteriorScalingFunction)
-    seriestype := :path
-
+function Base.collect(phi::AbstractScalingFunction)
     x = phi |> support .|> float
     y = phi |> values |> parent
 
-    @series begin
-        x, y
-    end
+    return x, y
+end
+
+
+@recipe function f(phi::AbstractScalingFunction)
+    seriestype := :path
+
+    collect(phi)
 end
 

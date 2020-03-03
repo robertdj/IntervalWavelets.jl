@@ -100,6 +100,9 @@ In matrix form, we have an eigenvalue problem:
 	\end{bmatrix}.
 \end{equation*}
 The $(i,j)$'th entry of the matrix is $\sqrt2 h_{2i-j}$ and the vector $\vv\phi = [\phi(n)]_{n=1}^4$ is an eigenvector of the eigenvalue 1.
+
+TODO: With suppoer $[N_1, N_2]$ the $(i,j)$'th entry is $\sqrt2 h_{2i-j+N_1}$
+
 This eigenspace is one-dimensional, so the only question is how to scale $\vv\phi$.
 From e.g.\ \cite[page 69]{Cohen:Daubechies:Vial:1993} we know that
 \begin{equation*}
@@ -161,15 +164,7 @@ The relevant counterpart to the dilation equation \cref{eq:internal_scaling_func
 \end{align}
 for $0\leq k\leq p-1$, where $(\lH_{k,l})$ and $(\lh_{k,m})$ are filter coefficients.
 
-For $x=0$, \eqref{eq:left_scaling_function_definition} becomes
-\begin{equation*}
-	\frac1{\sqrt2} \lphi_k(0)
-	= \sum_{l=0}^{p-1} \lH_{k,l} \lphi_l(0)
-\end{equation*}
-and these function values can be found as an eigenvector.
-% As in Section \ref{sec:internal}, we must scale this eigenvector such that the $\lphi_k$'s are normalized in $L^2([0,\infty))$.
-
-At the remaining integers we make use of the compact support.
+For $x \neq 0$ we make use of the compact support.
 Consider e.g.\ the case $p=2$ (where is $\phi$ is supported on $[-1,2]$, $\lphi_0$ is supported on $[0,2]$ and $\lphi_1$ is supported on $[0,3]$):
 \begin{align*}
 	\frac1{\sqrt2} \lphi_0(1)
@@ -182,6 +177,35 @@ Consider e.g.\ the case $p=2$ (where is $\phi$ is supported on $[-1,2]$, $\lphi_
 	& = \lh_{1,3} \phi(1) + \lh_{1,4} \phi(0).
 \end{align*}
 From Section \ref{sec:internal} we know how to calculate the internal scaling function and thus the boundary scaling function as well.
+
+For $x = 0$, \eqref{eq:left_scaling_function_definition} becomes
+\begin{equation*}
+	\frac1{\sqrt2} \lphi_k(0)
+    = \sum_{l=0}^{p-1} \lH_{k,l} \lphi_l(0).
+\end{equation*}
+These function values are therefore an eigenvector of the matrix with $(i,j)$'th entry $[\lH_{i,j}]$.
+To find the proper normalization of this eigenvector we can do as follows.
+Let $\lphi_\ell(0) = y_\ell$ for $0\leq \ell < p$.
+Computing an eigenvector as described we have $\lphi_\ell(0) = z_\ell = c y_\ell$ for some $c \in \R$.
+We know that the left boundary scaling functions are a basis capable of reconstructing polynomials.
+In particular, there exists $a_0, \ldots, a_{p-1}$ such that for all $x \in [0, 1]$ we have
+\begin{equation*}
+    \sum_{\ell=0}^{p-1} a_\ell \lphi_\ell(x) = 1.
+\end{equation*}
+On this interval all the interior scaling functions are zero and we only need the left boundary scaling functions.
+The coefficients can be determined by choosing $p$ dyadic rationals $x_0, \ldots, x_{p-1}$ with $0 < x_k \leq 1$ and solving the linear equations
+\begin{equation*}
+    \sum_{\ell=0}^{p-1} a_\ell \lphi_\ell(x_k) = 1, \quad 0\leq k< p.
+\end{equation*}
+In order to have have the $p$ function values $\lphi_\ell(x_k)$ the iterative refinement must proceed until the resolution of the dyadic rationals is at least $R = \lceil \log_2 p \rceil$.
+This gives us the constant $c$:
+\begin{equation*}
+    1 = \sum_{\ell=0}^{p-1} a_\ell \lphi_\ell(0) 
+    \quad\Rightarrow\quad
+    c = \sum_{\ell=0}^{p-1} a_\ell z_\ell. 
+\end{equation*}
+
+
 The four boundary scaling functions related to four vanishing moments are seen in \cref{fig:left_Daubechies4}.
 There is a large resemblance between $\lphi_3$ and the symmlet scaling function in \cref{fig:Daubechies4} (here denoted $\phi_4$).
 

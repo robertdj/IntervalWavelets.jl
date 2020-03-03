@@ -51,16 +51,18 @@ using Test
         h = interior_filter(2)
         phi = interior_scaling_function(h, 1)
 
-        @test values(phi) ≈ OffsetVector([0.0 ; 0.93301 ; 1.36602 ; 0.0 ; -0.36602 ; 0.06698 ; 0.0], -2:4) atol = 10.0^-4
+        @test phi.(support(phi)) ≈ [0.0 ; 0.93301 ; 1.36602 ; 0.0 ; -0.36602 ; 0.06698 ; 0.0] atol = 10.0^-4
+    end
 
 
+    @testset "Haar scaling functions" begin
         haar_filter = interior_filter(1, :min)
 
         haar = interior_scaling_function(haar_filter)
-        @test values(haar) == OffsetVector([1.0 ; 0.0], 0:1)
+        @test haar.(support(haar)) == [1.0 ; 0.0]
 
         haar = interior_scaling_function(haar_filter, 1)
-        @test values(haar) ≈ OffsetVector([1.0 ; 1.0 ; 0.0], 0:2)
+        @test haar.(support(haar)) ≈ [1.0 ; 1.0 ; 0.0]
     end
 
 
@@ -75,9 +77,6 @@ using Test
         @test support(phi1) == IntervalWavelets.all_dyadic_rationals(-1, 2, 1)
 
         @test phi1.(phi0_support) == phi0.(phi0_support)
-        for dr in phi0_support
-            @test phi1[dr] == phi0[dr]
-        end
     end
 end
 
