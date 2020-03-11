@@ -27,25 +27,24 @@ support_boundaries(phi::InteriorScalingFunction) = support_boundaries(filter(phi
 
 function support(phi::AbstractScalingFunction)
     # TODO: Prettify
-    #= DyadicRationalVector(axes(values(phi))[1].indices, scale(phi)) =#
     DyadicRational.(axes(values(phi))[1].indices, scale(phi))
 end
 
 
-function find_index(phi::AbstractScalingFunction, key::DyadicRational)
-    key_scale = scale(key)
+function find_index(phi::AbstractScalingFunction, x::DyadicRational)
+    x_scale = scale(x)
     phi_scale = scale(phi)
 
-    if (phi_scale < key_scale)
-        throw(DomainError(key, "Scaling function not computed at this resolution"))
+    if (phi_scale < x_scale)
+        throw(DomainError(x, "Scaling function not computed at this resolution"))
     end
 
-    idx = numerator(key) << (phi_scale - key_scale)
+    idx = numerator(x) << (phi_scale - x_scale)
 end
 
 
-function Base.getindex(phi::AbstractScalingFunction, key::DyadicRational)
-    idx = find_index(phi, key)
+function get_value(phi::AbstractScalingFunction, x::DyadicRational)
+    idx = find_index(phi, x)
 
     if checkbounds(Bool, values(phi), idx)
         return values(phi)[idx]
@@ -55,14 +54,23 @@ function Base.getindex(phi::AbstractScalingFunction, key::DyadicRational)
 end
 
 
-function Base.setindex!(phi::AbstractScalingFunction, value::Float64, key::DyadicRational)
-    idx = find_index(phi, key)
+function set_value!(phi::AbstractScalingFunction, x::DyadicRational, value::Float64)
+    idx = find_index(phi, x)
 
     if checkbounds(Bool, values(phi), idx)
         values(phi)[idx] = value
     else
         throw(BoundsError())
     end
+end
+
+
+function (phi::InteriorScalingFunction)(x::DyadicRational)
+    get_value(phi, x)
+end
+
+
+function (phi::InteriorScalingFunction)(x::DyadicRational, J::Integer, k::Integer = 0)
 end
 
 
@@ -131,16 +139,16 @@ function increase_resolution(phi::InteriorScalingFunction)
 
     for (index, x) in enumerate(support2)
         if isodd(index)
-            phi2[x] = phi[x]
+            set_value!(phi2, x, phi(x))
             continue
         end
 
         phi_val = 0.0
         for j in support(h)
-            phi_val += h[j] * phi[2*x - j]
+            phi_val += h[j] * phi(2*x - j)
         end
 
-        phi2[x] = sqrt2 * phi_val
+        set_value!(phi2, x, sqrt2 * phi_val)
     end
 
     return phi2
@@ -169,15 +177,6 @@ function dyadic_dilation_matrix(h::InteriorFilter)
     return H
 end
 
-
-# TODO: Does it make more sense to have only phi(dr) instead of phi[dr]?
-function (phi::InteriorScalingFunction)(x::DyadicRational)
-    phi[x]
-end
-
-
-function (phi::InteriorScalingFunction)(x::DyadicRational, J::Integer, k::Integer = 0)
-end
 
 function Base.collect(phi::AbstractScalingFunction)
     x = phi |> support .|> float

@@ -37,11 +37,8 @@ support_boundaries(phi::LeftScalingFunction) = 0, vanishing_moments(phi) + index
 support_boundaries(phi::RightScalingFunction) = -(vanishing_moments(phi) + index(phi)), 0
 
 # It is not possible to have a functor for an abstract type
-function value(phi::AbstractBoundaryScalingFunction, x::DyadicRational)
-    phi[x]
-end
-(phi::LeftScalingFunction)(x::DyadicRational) = value(phi, x)
-(phi::RightScalingFunction)(x::DyadicRational) = value(phi, x)
+(phi::LeftScalingFunction)(x::DyadicRational) = get_value(phi, x)
+(phi::RightScalingFunction)(x::DyadicRational) = get_value(phi, x)
 
 
 struct BoundaryScalingFunctions{T <: AbstractBoundaryScalingFunction}
@@ -148,7 +145,7 @@ function boundary_scaling_functions(b::BoundaryFilters, phi::InteriorScalingFunc
                 phi_val += filters(Phi)[k][m] * phi(2*x - interior_translation(m, side(b)))
             end
 
-            Phi[k][x] = sqrt2 * phi_val
+            set_value!(Phi[k], x, sqrt2 * phi_val)
         end
     end
 
@@ -156,7 +153,7 @@ function boundary_scaling_functions(b::BoundaryFilters, phi::InteriorScalingFunc
         # TODO: getindex/setindex! with integers?
         # TODO: I think it would make more sense to set value to be
         # "missing". This requires a Union in BoundaryScalingFunction
-        Phi[k][DyadicRational(0, 0)] = 0.0
+        set_value!(Phi[k], DyadicRational(0, 0), 0.0)
     end
 
     return Phi
@@ -208,7 +205,7 @@ function increase_resolution(Phi::BoundaryScalingFunctions)
     for k in 0:p - 1
         for (index, x) in enumerate(support(Phi2[k]))
             if isodd(index)
-                Phi2[k][x] = Phi[k][x]
+                set_value!(Phi2[k], x, Phi[k](x))
                 continue
             end
 
@@ -223,7 +220,7 @@ function increase_resolution(Phi::BoundaryScalingFunctions)
                 phi_val += filters(Phi)[k][m] * phi(2*x - interior_translation(m, side(Phi)))
             end
 
-            Phi2[k][x] = sqrt2 * phi_val
+            set_value!(Phi2[k], x, sqrt2 * phi_val)
         end
     end
 
@@ -249,8 +246,8 @@ function compute_edge_value!(Phi)
 
     function_values = scaled_function_values ./ scaling_factor
 
-    for (index, phi) in enumerate(Phi.functions)
-        Phi.functions[index][DyadicRational(0,0)] = function_values[index]
+    for index in 1:p
+        set_value!(Phi.functions[index], DyadicRational(0,0), function_values[index])
     end
 
     return Phi
