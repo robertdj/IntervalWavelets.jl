@@ -170,8 +170,7 @@ function boundary_scaling_functions(b::BoundaryFilters, phi::InteriorScalingFunc
     end
 
     for k in 0:p - 1
-        # TODO: getindex/setindex! with integers?
-        set_value!(Phi[k], DyadicRational(0, 0), 0.0)
+        set_value!(Phi[k], 0, 0.0)
     end
 
     return Phi

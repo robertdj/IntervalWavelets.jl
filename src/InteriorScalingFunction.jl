@@ -65,6 +65,16 @@ function set_value!(phi::AbstractScalingFunction, x::DyadicRational, value::Floa
 end
 
 
+function set_value!(phi::AbstractScalingFunction, x::Integer, value::Float64)
+    set_value!(phi, DyadicRational(x, 0), value)
+end
+
+
+function get_value(phi::AbstractScalingFunction, x::Integer)
+    get_value(phi, DyadicRational(x, 0))
+end
+
+
 function (phi::InteriorScalingFunction)(x::DyadicRational)
     get_value(phi, x)
 end
