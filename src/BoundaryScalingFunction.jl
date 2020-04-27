@@ -49,6 +49,7 @@ end
 
 
 index(phi::AbstractBoundaryScalingFunction) = phi.index
+vanishing_moments(phi::AbstractBoundaryScalingFunction) = phi.vanishing_moments
 support_boundaries(phi::LeftScalingFunction) = 0, vanishing_moments(phi) + index(phi)
 support_boundaries(phi::RightScalingFunction) = -(vanishing_moments(phi) + index(phi)), 0
 

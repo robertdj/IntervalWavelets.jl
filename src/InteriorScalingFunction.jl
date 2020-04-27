@@ -4,23 +4,13 @@ abstract type AbstractScalingFunction end
 struct InteriorScalingFunction <: AbstractScalingFunction
     values::OffsetArrays.OffsetVector{Float64, Vector{Float64}}
     filter::InteriorFilter
-    # TODO: vanishing_moments is not needed when we have filter
-    vanishing_moments::Int64
     scale::Int64
-end
-
-
-function InteriorScalingFunction(values, support, vanishing_moments, scale)
-    InteriorScalingFunction(
-        OffsetArrays.OffsetVector{Float64}(values, support[1]*2^scale:support[2]*2^scale),
-        vanishing_moments, scale
-    )
 end
 
 
 Base.values(phi::AbstractScalingFunction) = phi.values
 filter(phi::InteriorScalingFunction) = phi.filter
-vanishing_moments(phi::AbstractScalingFunction) = phi.vanishing_moments
+vanishing_moments(phi::InteriorScalingFunction) = phi |> filter |> vanishing_moments
 scale(phi::AbstractScalingFunction) = phi.scale
 support_boundaries(phi::InteriorScalingFunction) = support_boundaries(filter(phi))
 
@@ -92,7 +82,7 @@ Compute an interior scaling function in the integers in its support.
 function interior_scaling_function(h::InteriorFilter)
     if vanishing_moments(h) == 1
         # Haar
-        return InteriorScalingFunction(OffsetArrays.OffsetVector([1.0; 0.0], 0:1), h, 1, 0)
+        return InteriorScalingFunction(OffsetArrays.OffsetVector([1.0; 0.0], 0:1), h, 0)
     end
 
     H = dyadic_dilation_matrix(h)
@@ -103,8 +93,7 @@ function interior_scaling_function(h::InteriorFilter)
     function_values = [0.0 ; nonzero_function_values ; 0.0]
 
     InteriorScalingFunction(
-        OffsetArrays.OffsetVector(function_values, support(h)), 
-        h, vanishing_moments(h), 0
+        OffsetArrays.OffsetVector(function_values, support(h)), h, 0
     )
 end
 
@@ -142,7 +131,7 @@ function increase_resolution(phi::InteriorScalingFunction)
 
     phi2 = InteriorScalingFunction(
         OffsetArrays.OffsetVector{Float64}(undef, support_left*2^R:support_right*2^R),
-        filter(phi), vanishing_moments(phi), R
+        filter(phi), R
     )
 
     h = filter(phi)
