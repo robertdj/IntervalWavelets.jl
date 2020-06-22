@@ -1,7 +1,7 @@
 using IntervalWavelets
 using Test
 
-# Sides, index, resolution
+# Side, index, resolution
 expected_boundary_function_values = Dict{Tuple{Sides, Int, Int}, Vector{Float64}}(
     (LEFT, 0, 0) => [0.0 ; -1.1266 ; 0.0],
     (LEFT, 1, 0) => [0.0 ; 1.40586 ; -0.365497 ; 0.0],
@@ -28,11 +28,11 @@ expected_boundary_function_values = Dict{Tuple{Sides, Int, Int}, Vector{Float64}
 
         x = DyadicRational(0,0)
         if side == LEFT
-            @test phi[0][x] ≈ 1.95133 atol = 10.0^-4
-            @test phi[1][x] ≈ 0.293094 atol = 10.0^-4
+            @test phi[0](x) ≈ 1.95133 atol = 10.0^-4
+            @test phi[1](x) ≈ 0.293094 atol = 10.0^-4
         else
-            @test phi[0][x] ≈ 1.128671 atol = 10.0^-4
-            @test phi[1][x] ≈ -0.42407 atol = 10.0^-4
+            @test phi[0](x) ≈ 1.128671 atol = 10.0^-4
+            @test phi[1](x) ≈ -0.42407 atol = 10.0^-4
         end
     end
 

@@ -1,20 +1,18 @@
 using IntervalWavelets
-using OffsetArrays
 using Test
 
 
 @testset "Filters" begin
-    filter_coefficients = OffsetVector(rand(3), -1:1)
-    f = Filter(filter_coefficients)
+    filter_coefficients = rand(3)
+    f = Filter(filter_coefficients, -1:1)
     
-    @test coefficients(f) == filter_coefficients
     @test support(f) == -1:1
     @test support_boundaries(f) == (-1, 1)
     @test length(f) == 3
     
-    @test f[-1] == filter_coefficients[-1]
-    @test f[0] == filter_coefficients[0]
-    @test f[1] == filter_coefficients[1]
+    @test f[-1] == filter_coefficients[1]
+    @test f[0] == filter_coefficients[2]
+    @test f[1] == filter_coefficients[3]
     
     @test f[2] == 0.0
     @test f[-2] == 0.0

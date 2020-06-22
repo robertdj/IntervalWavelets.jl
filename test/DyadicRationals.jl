@@ -7,7 +7,7 @@ using Test
         dr = DyadicRational(1, 2)
 
         @test IntervalWavelets.numerator(dr) == 1
-        @test IntervalWavelets.scale(dr) == 2
+        @test resolution(dr) == 2
 
         @test DyadicRational(4, 1) == DyadicRational(2, 0)
         @test DyadicRational(-4, 1) == DyadicRational(-2, 0)
@@ -38,34 +38,6 @@ using Test
 
         @test float(DyadicRational(3, 0)) == 3.0
         @test float(DyadicRational(3, 2)) == 0.75
-    end
-end
-
-
-@testset "Dyadic Rational vector" begin
-    numerator = rand(-9:9, 2)
-    scale = rand(0:9)
-
-    @testset "Construct Dyadic Rational vector" begin
-        drv = DyadicRationalVector(numerator, scale)
-
-        @test IntervalWavelets.numerator(drv) == numerator
-        @test IntervalWavelets.scale(drv) == scale
-    end
-
-    @testset "Use Dyadic Rational vector" begin
-        drv = DyadicRationalVector(numerator, scale)
-
-        @test isa(drv[1], DyadicRational)
-        @test isa(drv[end], DyadicRational)
-    end
-
-    @testset "Wrong Dyadic Rationals vector" begin
-        @test_throws DomainError DyadicRationalVector(numerator, -scale - 1)
-
-        @test_throws InexactError DyadicRationalVector(rand(2), scale)
-        @test_throws InexactError DyadicRationalVector(numerator, rand())
-        @test_throws InexactError DyadicRationalVector(rand(2), rand())
     end
 end
 

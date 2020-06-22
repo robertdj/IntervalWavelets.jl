@@ -3,14 +3,17 @@
 
 struct Filter
 	coefficients::OffsetArrays.OffsetVector{Float64, Vector{Float64}}
+    support::AbstractRange{Int64}
+
+    function Filter(coefficients::AbstractVector{Float64}, support::AbstractRange{Int64})
+        new(OffsetArrays.OffsetVector(coefficients, support), support)
+    end
 end
 
 
-function support(h::Filter)
-    # TODO: Make this more high-level
-    integers_in_support = h |> coefficients |> axes
-    integers_in_support[1].indices
-end
+coefficients(h::Filter) = h.coefficients
+support(h::Filter) = h.support
+Base.length(h::Filter) = h |> coefficients |> length
 
 
 function support_boundaries(h::Filter)
@@ -18,10 +21,6 @@ function support_boundaries(h::Filter)
 
     return filter_support[1], filter_support[end]
 end
-
-
-coefficients(h::Filter) = h.coefficients
-Base.length(h::Filter) = h |> coefficients |> length
 
 
 function Base.show(io::IO, h::Filter)
@@ -85,7 +84,7 @@ function interior_filter(p::Integer, phase::Symbol=:symmlet)
 		throw(DomainError(p, "Interior filter must have at least 1 vanishing moment"))
 	end
 
-    return InteriorFilter(p, Filter(interior_filter(p, Val{phase})))
+    return InteriorFilter(p, interior_filter(p, Val{phase}))
 end
 
 
@@ -94,12 +93,13 @@ function interior_filter(p::Integer, ::Type{Val{:symmlet}})
         throw(DomainError(p, "symmlet filter should have between 2 and 8 vanishing moments"))
     end
 
-    OffsetArrays.OffsetVector(INTERIOR_COEFFICIENTS[p], -p+1:p)
+    Filter(INTERIOR_COEFFICIENTS[p], -p+1:p)
 end
 
 
 function interior_filter(p::Integer, ::Type{Val{:min}})
-    OffsetArrays.OffsetVector(Wavelets.wavelet(Wavelets.WT.Daubechies{p}()).qmf, 0:2*p-1)
+    coefficients = Wavelets.wavelet(Wavelets.WT.Daubechies{p}()).qmf
+    Filter(coefficients, 0:2*p-1)
 end
 
 
@@ -139,14 +139,13 @@ function boundary_filters(p::Integer, side::Sides)
     supports = [0:(p + 2*k) for k in 0:(p - 1)]
 
     if side == LEFT
-        coefficients = map(OffsetArrays.OffsetVector, LEFT_SCALING_COEFFICIENTS[p], supports)
-    elseif side == RIGHT
-        coefficients = map(OffsetArrays.OffsetVector, RIGHT_SCALING_COEFFICIENTS[p], supports)
+        coefficients = LEFT_SCALING_COEFFICIENTS[p]
     else
-        throw(DomainError("Side should be either LEFT or RIGHT"))
+        coefficients = RIGHT_SCALING_COEFFICIENTS[p]
     end
 
-    filters = map(Filter, coefficients)
+    filters = map(Filter, coefficients, supports)
+
     return BoundaryFilters(side, p, filters)
 end
 

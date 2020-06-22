@@ -15,26 +15,32 @@ struct DyadicRational <: AbstractFloat
 end
 
 numerator(dr::DyadicRational) = dr.numerator
-scale(dr::DyadicRational) = dr.R
+resolution(dr::DyadicRational) = dr.R
 
-Base.:+(dr::DyadicRational, k::Integer) = DyadicRational(numerator(dr) + (k << scale(dr)), scale(dr))
-Base.:-(dr::DyadicRational, k::Integer) = DyadicRational(numerator(dr) - (k << scale(dr)), scale(dr))
-Base.:*(a::Integer, dr::DyadicRational) = DyadicRational(a * numerator(dr), scale(dr))
+Base.:+(dr::DyadicRational, k::Integer) = DyadicRational(numerator(dr) + (k << resolution(dr)), resolution(dr))
+Base.:-(dr::DyadicRational, k::Integer) = DyadicRational(numerator(dr) - (k << resolution(dr)), resolution(dr))
+Base.:*(a::Integer, dr::DyadicRational) = DyadicRational(a * numerator(dr), resolution(dr))
 
 
 function Base.show(io::IO, dr::DyadicRational)
-    if scale(dr) == 0
+    if resolution(dr) == 0
         print(io, numerator(dr))
-    elseif scale(dr) == 1
+    elseif resolution(dr) == 1
         print(io, numerator(dr), "/2")
     else
-        print(io, numerator(dr), "/2^", scale(dr))
+        print(io, numerator(dr), "/2^", resolution(dr))
     end
 end
 
 
+#= Base.convert(::Type{DyadicRational}, x::Integer) = Integer(x) =#
+#= Base.promote_rule(::Type{DyadicRational}, ::Type{Integer}) = DyadicRational =#
+
+#= Base.:<(x::DyadicRational, y::DyadicRational) = numerator(x) << resolution(y) < numerator(y) << resolution(x) =#
+#= Base.:<=(x::DyadicRational, y::DyadicRational) = numerator(x) << resolution(y) <= numerator(y) << resolution(x) =#
+
 function Base.Integer(dr::DyadicRational)
-    if scale(dr) != 0
+    if resolution(dr) != 0
         throw(InexactError(:Integer, Int64, dr))
     end
 
@@ -44,7 +50,7 @@ end
 
 function all_dyadic_rationals(left::Integer, right::Integer, R::Integer)
     if R < 0
-        throw(DomainError(R, "Scale must be positive"))
+        throw(DomainError(R, "Scale must be non-negative"))
     end
 
     DyadicRational.(left*2^R:right*2^R, R)
@@ -52,30 +58,6 @@ end
 
 
 function AbstractFloat(dr::DyadicRational)
-    numerator(dr) / 2.0^scale(dr)
-end
-
-
-struct DyadicRationalVector
-    numerator::AbstractVector{Int64}
-    R::Int64
-
-    function DyadicRationalVector(numerator, R)
-        if R < 0
-            throw(DomainError(R, "Scale must be positive"))
-        end
-
-        new(numerator, R)
-    end
-end
-
-Base.getindex(dr::DyadicRationalVector, key) = DyadicRational(numerator(dr)[key], scale(dr))
-Base.lastindex(dr::DyadicRationalVector) = lastindex(numerator(dr))
-
-numerator(dr::DyadicRationalVector) = dr.numerator
-scale(dr::DyadicRationalVector) = dr.R
-
-function Base.show(io::IO, dr::DyadicRationalVector)
-    print(io, dr[1], ", ..., ", dr[end])
+    numerator(dr) / 2.0^resolution(dr)
 end
 

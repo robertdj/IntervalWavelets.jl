@@ -2,78 +2,100 @@ abstract type AbstractBoundaryScalingFunction <: AbstractScalingFunction end
 
 struct LeftScalingFunction <: AbstractBoundaryScalingFunction
     values::OffsetArrays.OffsetVector{Float64, Vector{Float64}}
+    support::Vector{DyadicRational}
     vanishing_moments::Int64
     index::Int64
-    scale::Int64
+    resolution::Int64
 
-    #= function LeftScalingFunction(values, p, index, scale, side) =#
-    #=     if p < 0 =#
-			#= throw(DomainError(p, "Not a valid number of vanishing moments")) =#
-    #=     end =#
+    function LeftScalingFunction(values, p, index, scale)
+        if p < 0
+			throw(DomainError(p, "Vanishing moments must be positive"))
+        end
 
-    #=     if scale < 0 =#
-			#= throw(DomainError(scale, "Not a valid scale")) =#
-    #=     end =#
+        if scale < 0
+			throw(DomainError(scale, "Resolution must be positive"))
+        end
 
-    #=     if !(0 <= index < p) =#
-			#= throw(DomainError(index, "Index should be between 0 and " * p - 1)) =#
-    #=     end =#
+        if !(0 <= index < p)
+			throw(DomainError(index, "Index should be between 0 and " * p - 1))
+        end
 
-    #=     new(values, p, index, scale) =#
-    #= end =#
+        support = DyadicRational.(0:length(values) - 1, scale)
+        new(values, support, p, index, scale)
+    end
 end
 
 
 struct RightScalingFunction <: AbstractBoundaryScalingFunction
     values::OffsetArrays.OffsetVector{Float64, Vector{Float64}}
+    support::Vector{DyadicRational}
     vanishing_moments::Int64
     index::Int64
-    scale::Int64
+    resolution::Int64
+
+    function RightScalingFunction(values, p, index, scale)
+        if p < 0
+			throw(DomainError(p, "Vanishing moments must be positive"))
+        end
+
+        if scale < 0
+			throw(DomainError(scale, "Resolution must be positive"))
+        end
+
+        if !(0 <= index < p)
+			throw(DomainError(index, "Index should be between 0 and " * p - 1))
+        end
+
+        support = DyadicRational.(-length(values) + 1:0, scale)
+        new(values, support, p, index, scale)
+    end
 end
 
 
 index(phi::AbstractBoundaryScalingFunction) = phi.index
+vanishing_moments(phi::AbstractBoundaryScalingFunction) = phi.vanishing_moments
 support_boundaries(phi::LeftScalingFunction) = 0, vanishing_moments(phi) + index(phi)
 support_boundaries(phi::RightScalingFunction) = -(vanishing_moments(phi) + index(phi)), 0
 
 # It is not possible to have a functor for an abstract type
-function value(phi::AbstractBoundaryScalingFunction, x::DyadicRational)
-    phi[x]
-end
-(phi::LeftScalingFunction)(x::DyadicRational) = value(phi, x)
-(phi::RightScalingFunction)(x::DyadicRational) = value(phi, x)
+(phi::LeftScalingFunction)(x::DyadicRational) = get_value(phi, x)
+(phi::RightScalingFunction)(x::DyadicRational) = get_value(phi, x)
 
 
 struct BoundaryScalingFunctions{T <: AbstractBoundaryScalingFunction}
     functions::Vector{T}
     filters::BoundaryFilters
     phi::InteriorScalingFunction
-    # TODO: vanishing_moments is not needed when we have filter
-    vanishing_moments::Int64
     scale::Int64
     side::Sides
 
-    #= function BoundaryScalingFunctions(functions, filter, phi, p, scale, sides) =#
-    #=     if p < 0 =#
-			#= throw(DomainError(p, "Not a valid number of vanishing moments")) =#
-    #=     end =#
+    function BoundaryScalingFunctions(functions, filter, phi, scale, side)
+        p = length(functions)
 
-    #=     if scale < 0 =#
-			#= throw(DomainError(scale, "Not a valid scale")) =#
-    #=     end =#
+        if length(functions) != vanishing_moments(filter)
+			throw(DomainError(p, "The number of vanishing moments of the filter should equal the number of functions"))
+        end
 
-    #=     if support_boundaries(phi) != (-p + 1, p) =#
-    #=         ErrorException("Interior scaling function has wrong domain") =#
-    #=     end =#
+        if vanishing_moments(filter) != vanishing_moments(phi)
+            throw(DomainError(p, "The filter and the Interior scaling function should have the same number of vanishing moments"))
+        end
 
-    #=     new(functions, filter, phi, p, scale, sides) =#
-    #= end =#
+        if scale < 0
+			throw(DomainError(scale, "Scale must be positive"))
+        end
+
+        if support_boundaries(phi) != (-p + 1, p)
+            ErrorException("Interior scaling function has wrong domain")
+        end
+
+        new{eltype(functions)}(functions, filter, phi, scale, side)
+    end
 end
 
 
 functions(Phi::BoundaryScalingFunctions) = Phi.functions
 filters(Phi::BoundaryScalingFunctions) = Phi.filters
-vanishing_moments(Phi::BoundaryScalingFunctions) = Phi.vanishing_moments
+vanishing_moments(Phi::BoundaryScalingFunctions) = Phi |> functions |> length
 interior(Phi::BoundaryScalingFunctions) = Phi.phi
 side(Phi::BoundaryScalingFunctions) = Phi.side
 resolution(Phi::BoundaryScalingFunctions) = Phi.scale
@@ -88,16 +110,16 @@ function initialize_boundary_scaling_functions(b::BoundaryFilters, phi::Interior
     p = vanishing_moments(b)
 
     if side(b) == LEFT
-    Y = [LeftScalingFunction(
-            OffsetArrays.OffsetVector{Float64}(undef, 0:2^R*(p + k)), p, k, R
-        ) for k = 0:p - 1]
+        Y = [LeftScalingFunction(
+                OffsetArrays.OffsetVector{Float64}(undef, 0:2^R*(p + k)), p, k, R
+            ) for k = 0:p - 1]
     elseif side(b) == RIGHT
-    Y = [RightScalingFunction(
-            OffsetArrays.OffsetVector{Float64}(undef, -2^R*(p + k):0), p, k, R
-        ) for k = 0:p - 1]
+        Y = [RightScalingFunction(
+                OffsetArrays.OffsetVector{Float64}(undef, -2^R*(p + k):0), p, k, R
+            ) for k = 0:p - 1]
     end
 
-    BoundaryScalingFunctions(Y, b, phi, p, R, side(b))
+    BoundaryScalingFunctions(Y, b, phi, R, side(b))
 end
 
 
@@ -117,7 +139,7 @@ function sorted_support_union(Phi::BoundaryScalingFunctions{RightScalingFunction
 end
 
 
-function supports(Phi::BoundaryScalingFunctions)::Vector{Vector{DyadicRational}}
+function supports(Phi::BoundaryScalingFunctions)
     p = vanishing_moments(Phi)
     [support(Phi[k]) for k = 0:p - 1]
 end
@@ -148,15 +170,12 @@ function boundary_scaling_functions(b::BoundaryFilters, phi::InteriorScalingFunc
                 phi_val += filters(Phi)[k][m] * phi(2*x - interior_translation(m, side(b)))
             end
 
-            Phi[k][x] = sqrt2 * phi_val
+            set_value!(Phi[k], x, sqrt2 * phi_val)
         end
     end
 
     for k in 0:p - 1
-        # TODO: getindex/setindex! with integers?
-        # TODO: I think it would make more sense to set value to be
-        # "missing". This requires a Union in BoundaryScalingFunction
-        Phi[k][DyadicRational(0, 0)] = 0.0
+        set_value!(Phi[k], 0, 0.0)
     end
 
     return Phi
@@ -208,7 +227,7 @@ function increase_resolution(Phi::BoundaryScalingFunctions)
     for k in 0:p - 1
         for (index, x) in enumerate(support(Phi2[k]))
             if isodd(index)
-                Phi2[k][x] = Phi[k][x]
+                set_value!(Phi2[k], x, Phi[k](x))
                 continue
             end
 
@@ -223,7 +242,7 @@ function increase_resolution(Phi::BoundaryScalingFunctions)
                 phi_val += filters(Phi)[k][m] * phi(2*x - interior_translation(m, side(Phi)))
             end
 
-            Phi2[k][x] = sqrt2 * phi_val
+            set_value!(Phi2[k], x, sqrt2 * phi_val)
         end
     end
 
@@ -249,8 +268,8 @@ function compute_edge_value!(Phi)
 
     function_values = scaled_function_values ./ scaling_factor
 
-    for (index, phi) in enumerate(Phi.functions)
-        Phi.functions[index][DyadicRational(0,0)] = function_values[index]
+    for index in 1:p
+        set_value!(Phi.functions[index], DyadicRational(0,0), function_values[index])
     end
 
     return Phi
