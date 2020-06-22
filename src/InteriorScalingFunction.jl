@@ -5,22 +5,21 @@ struct InteriorScalingFunction <: AbstractScalingFunction
     values::OffsetArrays.OffsetVector{Float64, Vector{Float64}}
     support::Vector{DyadicRational}
     filter::InteriorFilter
-    # TODO: Rename to resolution
-    scale::Int64
+    resolution::Int64
 end
 
 
 Base.values(phi::AbstractScalingFunction) = phi.values
 filter(phi::InteriorScalingFunction) = phi.filter
 vanishing_moments(phi::InteriorScalingFunction) = phi |> filter |> vanishing_moments
-scale(phi::AbstractScalingFunction) = phi.scale
+resolution(phi::AbstractScalingFunction) = phi.resolution
 support_boundaries(phi::InteriorScalingFunction) = support_boundaries(filter(phi))
 support(phi::AbstractScalingFunction) = phi.support
 
 
 function find_index(phi::AbstractScalingFunction, x::DyadicRational)
-    x_scale = scale(x)
-    phi_scale = scale(phi)
+    x_scale = resolution(x)
+    phi_scale = resolution(phi)
 
     if (phi_scale < x_scale)
         throw(DomainError(x, "Scaling function not computed at this resolution"))
@@ -138,7 +137,7 @@ Increase the resolution of a DaubScaling scaling function by one.
 """
 function increase_resolution(phi::InteriorScalingFunction)
     h = filter(phi)
-    phi2 = initialize_interior_scaling_function(h, scale(phi) + 1)
+    phi2 = initialize_interior_scaling_function(h, resolution(phi) + 1)
     support2 = support(phi2)
 
     for (index, x) in enumerate(support2)

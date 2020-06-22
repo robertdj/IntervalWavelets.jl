@@ -5,7 +5,7 @@ struct LeftScalingFunction <: AbstractBoundaryScalingFunction
     support::Vector{DyadicRational}
     vanishing_moments::Int64
     index::Int64
-    scale::Int64
+    resolution::Int64
 
     function LeftScalingFunction(values, p, index, scale)
         if p < 0
@@ -31,7 +31,7 @@ struct RightScalingFunction <: AbstractBoundaryScalingFunction
     support::Vector{DyadicRational}
     vanishing_moments::Int64
     index::Int64
-    scale::Int64
+    resolution::Int64
 
     function RightScalingFunction(values, p, index, scale)
         if p < 0

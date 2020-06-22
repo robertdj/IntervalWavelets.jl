@@ -8,7 +8,6 @@ using RecipesBase
 
 export 
     DyadicRational,
-    DyadicRationalVector,
     Filter,
     InteriorFilter,
     BoundaryFilter,
@@ -24,7 +23,7 @@ export
     interior_scaling_function,
     numerator,
     reduce,
-    scale,
+    resolution,
     side,
     support,
     support_boundaries,

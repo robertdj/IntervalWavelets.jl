@@ -34,13 +34,13 @@ using Test
 
         @test collect(support(h)) == Integer.(support(phi))
         @test vanishing_moments(phi) == 2
-        @test scale(phi) == 0
+        @test resolution(phi) == 0
 
 
         phi = interior_scaling_function(h, 1)
 
         @test vanishing_moments(phi) == 2
-        @test scale(phi) == 1
+        @test resolution(phi) == 1
 
 
         @test_throws DomainError interior_scaling_function(h, -1)

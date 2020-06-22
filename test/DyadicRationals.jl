@@ -7,7 +7,7 @@ using Test
         dr = DyadicRational(1, 2)
 
         @test IntervalWavelets.numerator(dr) == 1
-        @test IntervalWavelets.scale(dr) == 2
+        @test resolution(dr) == 2
 
         @test DyadicRational(4, 1) == DyadicRational(2, 0)
         @test DyadicRational(-4, 1) == DyadicRational(-2, 0)
