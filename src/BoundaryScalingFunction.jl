@@ -139,7 +139,7 @@ function sorted_support_union(Phi::BoundaryScalingFunctions{RightScalingFunction
 end
 
 
-function supports(Phi::BoundaryScalingFunctions)::Vector{Vector{DyadicRational}}
+function supports(Phi::BoundaryScalingFunctions)
     p = vanishing_moments(Phi)
     [support(Phi[k]) for k = 0:p - 1]
 end

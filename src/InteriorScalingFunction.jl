@@ -72,6 +72,17 @@ function (phi::InteriorScalingFunction)(x::DyadicRational, J::Integer, k::Intege
 end
 
 
+function initialize_interior_scaling_function(f::InteriorFilter, R::Integer)
+    support_left, support_right = support_boundaries(f)
+    support = all_dyadic_rationals(support_left, support_right, R)
+
+    phi2 = InteriorScalingFunction(
+        OffsetArrays.OffsetVector{Float64}(undef, support_left*2^R:support_right*2^R),
+        support, f, R
+    )
+end
+
+
 """
     interior_scaling_function(::InteriorFilter) -> InteriorScalingFunction
 
@@ -126,17 +137,9 @@ end
 Increase the resolution of a DaubScaling scaling function by one.
 """
 function increase_resolution(phi::InteriorScalingFunction)
-    # TODO: Function for initializing phi?
-    support_left, support_right = support_boundaries(filter(phi))
-    R = scale(phi) + 1
-    support2 = all_dyadic_rationals(support_left, support_right, R)
-
-    phi2 = InteriorScalingFunction(
-        OffsetArrays.OffsetVector{Float64}(undef, support_left*2^R:support_right*2^R),
-        support2, filter(phi), R
-    )
-
     h = filter(phi)
+    phi2 = initialize_interior_scaling_function(h, scale(phi) + 1)
+    support2 = support(phi2)
 
     for (index, x) in enumerate(support2)
         if isodd(index)
