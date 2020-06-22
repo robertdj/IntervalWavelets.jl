@@ -183,11 +183,7 @@ end
 
 
 @inline function interior_translation(m::Integer, side::Sides)
-    if side == LEFT
-        return m
-    elseif side == RIGHT
-        return -m - 1
-    end
+    side == LEFT ? m : -m - 1
 end
 
 
