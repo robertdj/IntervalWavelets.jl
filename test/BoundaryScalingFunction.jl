@@ -1,7 +1,7 @@
 using IntervalWavelets
 using Test
 
-# Sides, index, resolution
+# Side, index, resolution
 expected_boundary_function_values = Dict{Tuple{Sides, Int, Int}, Vector{Float64}}(
     (LEFT, 0, 0) => [0.0 ; -1.1266 ; 0.0],
     (LEFT, 1, 0) => [0.0 ; 1.40586 ; -0.365497 ; 0.0],

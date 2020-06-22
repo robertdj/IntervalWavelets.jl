@@ -2,6 +2,7 @@ abstract type AbstractBoundaryScalingFunction <: AbstractScalingFunction end
 
 struct LeftScalingFunction <: AbstractBoundaryScalingFunction
     values::OffsetArrays.OffsetVector{Float64, Vector{Float64}}
+    support::Vector{DyadicRational}
     vanishing_moments::Int64
     index::Int64
     scale::Int64
@@ -19,13 +20,15 @@ struct LeftScalingFunction <: AbstractBoundaryScalingFunction
 			throw(DomainError(index, "Index should be between 0 and " * p - 1))
         end
 
-        new(values, p, index, scale)
+        support = DyadicRational.(0:length(values) - 1, scale)
+        new(values, support, p, index, scale)
     end
 end
 
 
 struct RightScalingFunction <: AbstractBoundaryScalingFunction
     values::OffsetArrays.OffsetVector{Float64, Vector{Float64}}
+    support::Vector{DyadicRational}
     vanishing_moments::Int64
     index::Int64
     scale::Int64
@@ -43,7 +46,8 @@ struct RightScalingFunction <: AbstractBoundaryScalingFunction
 			throw(DomainError(index, "Index should be between 0 and " * p - 1))
         end
 
-        new(values, p, index, scale)
+        support = DyadicRational.(-length(values) + 1:0, scale)
+        new(values, support, p, index, scale)
     end
 end
 

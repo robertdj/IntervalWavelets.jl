@@ -3,7 +3,9 @@ abstract type AbstractScalingFunction end
 
 struct InteriorScalingFunction <: AbstractScalingFunction
     values::OffsetArrays.OffsetVector{Float64, Vector{Float64}}
+    support::Vector{DyadicRational}
     filter::InteriorFilter
+    # TODO: Rename to resolution
     scale::Int64
 end
 
@@ -13,12 +15,7 @@ filter(phi::InteriorScalingFunction) = phi.filter
 vanishing_moments(phi::InteriorScalingFunction) = phi |> filter |> vanishing_moments
 scale(phi::AbstractScalingFunction) = phi.scale
 support_boundaries(phi::InteriorScalingFunction) = support_boundaries(filter(phi))
-
-
-function support(phi::AbstractScalingFunction)
-    # TODO: Prettify
-    DyadicRational.(axes(values(phi))[1].indices, scale(phi))
-end
+support(phi::AbstractScalingFunction) = phi.support
 
 
 function find_index(phi::AbstractScalingFunction, x::DyadicRational)
@@ -36,8 +33,9 @@ end
 function get_value(phi::AbstractScalingFunction, x::DyadicRational)
     idx = find_index(phi, x)
 
-    if checkbounds(Bool, values(phi), idx)
-        return values(phi)[idx]
+    v = values(phi)
+    if checkbounds(Bool, v, idx)
+        return v[idx]
     else
         return 0.0
     end
@@ -82,7 +80,10 @@ Compute an interior scaling function in the integers in its support.
 function interior_scaling_function(h::InteriorFilter)
     if vanishing_moments(h) == 1
         # Haar
-        return InteriorScalingFunction(OffsetArrays.OffsetVector([1.0; 0.0], 0:1), h, 0)
+        return InteriorScalingFunction(
+            OffsetArrays.OffsetVector([1.0; 0.0], 0:1), 
+            DyadicRational.(0:1, 0), h, 0
+        )
     end
 
     H = dyadic_dilation_matrix(h)
@@ -93,7 +94,8 @@ function interior_scaling_function(h::InteriorFilter)
     function_values = [0.0 ; nonzero_function_values ; 0.0]
 
     InteriorScalingFunction(
-        OffsetArrays.OffsetVector(function_values, support(h)), h, 0
+        OffsetArrays.OffsetVector(function_values, support(h)), 
+        DyadicRational.(support(h), 0), h, 0
     )
 end
 
@@ -131,7 +133,7 @@ function increase_resolution(phi::InteriorScalingFunction)
 
     phi2 = InteriorScalingFunction(
         OffsetArrays.OffsetVector{Float64}(undef, support_left*2^R:support_right*2^R),
-        filter(phi), R
+        support2, filter(phi), R
     )
 
     h = filter(phi)
