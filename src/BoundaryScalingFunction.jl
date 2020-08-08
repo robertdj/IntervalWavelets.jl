@@ -1,5 +1,6 @@
 abstract type AbstractBoundaryScalingFunction <: AbstractScalingFunction end
 
+
 struct LeftScalingFunction <: AbstractBoundaryScalingFunction
     values::OffsetArrays.OffsetVector{Float64, Vector{Float64}}
     support::Vector{DyadicRational}
@@ -26,6 +27,12 @@ struct LeftScalingFunction <: AbstractBoundaryScalingFunction
 end
 
 
+function Base.show(io::IO, L::LeftScalingFunction)
+    print(io, "Left scaling function number ", index(L), " with ", vanishing_moments(L), 
+              " vanishing moments at resolution ", resolution(L))
+end
+
+
 struct RightScalingFunction <: AbstractBoundaryScalingFunction
     values::OffsetArrays.OffsetVector{Float64, Vector{Float64}}
     support::Vector{DyadicRational}
@@ -49,6 +56,12 @@ struct RightScalingFunction <: AbstractBoundaryScalingFunction
         support = DyadicRational.(-length(values) + 1:0, scale)
         new(values, support, p, index, scale)
     end
+end
+
+
+function Base.show(io::IO, R::RightScalingFunction)
+    print(io, "Left scaling function number ", index(R), " with ", vanishing_moments(R), 
+              " vanishing moments at resolution ", resolution(R))
 end
 
 
@@ -90,6 +103,12 @@ struct BoundaryScalingFunctions{T <: AbstractBoundaryScalingFunction}
 
         new{eltype(functions)}(functions, filter, phi, scale, side)
     end
+end
+
+
+function Base.show(io::IO, B::BoundaryScalingFunctions)
+    print(io, side(B), " scaling functions with ", vanishing_moments(B), 
+              " vanishing moments at resolution ", resolution(B))
 end
 
 
