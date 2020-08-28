@@ -21,6 +21,9 @@ using Test
         @test DyadicRational(2, 0) + 1 == DyadicRational(3, 0)
         @test DyadicRational(2, 1) + 1 == DyadicRational(4, 1)
 
+        @test DyadicRational(1, 0) + DyadicRational(1, 1) == DyadicRational(3, 1)
+        @test DyadicRational(1, 0) - DyadicRational(1, 1) == DyadicRational(1, 1)
+
         @test 2 * DyadicRational(2, 0) == DyadicRational(4, 0)
         @test 3 * DyadicRational(1, 2) == DyadicRational(3, 2)
     end
