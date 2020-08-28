@@ -39,5 +39,14 @@ using Test
         @test float(DyadicRational(3, 0)) == 3.0
         @test float(DyadicRational(3, 2)) == 0.75
     end
+
+
+    @testset "Compare Dyadic Rationals" begin
+        @test DyadicRational(1, 2) < DyadicRational(2, 2)
+        @test DyadicRational(1, 2) > DyadicRational(-1, 2)
+
+        @test DyadicRational(1, 2) >= DyadicRational(1, 2)
+        @test DyadicRational(1, 2) <= DyadicRational(1, 2)
+    end
 end
 

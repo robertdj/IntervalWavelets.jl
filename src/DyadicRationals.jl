@@ -20,6 +20,8 @@ resolution(dr::DyadicRational) = dr.R
 Base.:+(dr::DyadicRational, k::Integer) = DyadicRational(numerator(dr) + (k << resolution(dr)), resolution(dr))
 Base.:-(dr::DyadicRational, k::Integer) = DyadicRational(numerator(dr) - (k << resolution(dr)), resolution(dr))
 Base.:*(a::Integer, dr::DyadicRational) = DyadicRational(a * numerator(dr), resolution(dr))
+Base.:<(a::DyadicRational, b::DyadicRational) = numerator(a) << resolution(b) < numerator(b) << resolution(a)
+Base.:<=(a::DyadicRational, b::DyadicRational) = numerator(a) << resolution(b) <= numerator(b) << resolution(a)
 
 
 function Base.show(io::IO, dr::DyadicRational)
