@@ -20,14 +20,19 @@ resolution(dr::DyadicRational) = dr.R
 Base.:+(dr::DyadicRational, k::Integer) = DyadicRational(numerator(dr) + (k << resolution(dr)), resolution(dr))
 Base.:-(dr::DyadicRational, k::Integer) = DyadicRational(numerator(dr) - (k << resolution(dr)), resolution(dr))
 
+# TODO: Make both + and - in one go
 function Base.:+(a::DyadicRational, b::DyadicRational)
+    common_numerator = (numerator(a) << resolution(b)) + (numerator(b) << resolution(a))
     common_resolution = max(resolution(a), resolution(b))
-    DyadicRational(numerator(a) << resolution(b) + numerator(b) << resolution(a), common_resolution)
+
+    DyadicRational(common_numerator, common_resolution)
 end
 
 function Base.:-(a::DyadicRational, b::DyadicRational)
+    common_numerator = (numerator(a) << resolution(b)) - (numerator(b) << resolution(a))
     common_resolution = max(resolution(a), resolution(b))
-    DyadicRational(numerator(a) << resolution(b) - numerator(b) << resolution(a), common_resolution)
+    
+    DyadicRational(common_numerator, common_resolution)
 end
 
 Base.:*(a::Integer, dr::DyadicRational) = DyadicRational(a * numerator(dr), resolution(dr))
