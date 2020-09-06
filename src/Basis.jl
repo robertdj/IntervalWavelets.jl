@@ -9,8 +9,8 @@ struct IntervalScalingFunctionBasis
     right_boundary::DyadicRational
 
     function IntervalScalingFunctionBasis(left, interior, right, scale, left_boundary, right_boundary)
-        if right_boundary >= left_boundary
-            the(DomainError(left_boundary, "Reconstruction interval is degenerate"))
+        if right_boundary <= left_boundary
+            throw(DomainError(left_boundary, "Reconstruction interval is degenerate"))
         end
 
         p = vanishing_moments(left)
@@ -19,8 +19,13 @@ struct IntervalScalingFunctionBasis
         end
 
         R = resolution(left)
-        if (R < scale)
+        if R < scale
             throw(DomainError(scale, "Scale of basis functions must be greater than the resolution"))
+        end
+
+        length_of_support = 2*p - 1
+        if length_of_support > 2^scale
+            throw(DomainError(scale, "Number of vanishing moments is too large for the scale"))
         end
 
         if !(R == resolution(interior) == resolution(right))
