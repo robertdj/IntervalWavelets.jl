@@ -4,10 +4,10 @@ using Test
 
 @testset "Dyadic Rationals" begin
     @testset "Construct Dyadic Rationals" begin 
-        dr = DyadicRational(1, 2)
+        x = DyadicRational(1, 2)
 
-        @test IntervalWavelets.numerator(dr) == 1
-        @test resolution(dr) == 2
+        @test IntervalWavelets.numerator(x) == 1
+        @test resolution(x) == 2
 
         @test DyadicRational(4, 1) == DyadicRational(2, 0)
         @test DyadicRational(-4, 1) == DyadicRational(-2, 0)
@@ -32,6 +32,13 @@ using Test
     @testset "All Dyadic Rationals" begin
         @test IntervalWavelets.all_dyadic_rationals(0, 1, 0) == DyadicRational.([0 ; 1], 0)
         @test IntervalWavelets.all_dyadic_rationals(0, 1, 1) == DyadicRational.(0:2, 1)
+
+        left = DyadicRational(-1, 1)
+        right = DyadicRational(1, 2)
+        @test IntervalWavelets.all_dyadic_rationals(left, right, 2) == DyadicRational.(-2:1, 2)
+        @test length(IntervalWavelets.all_dyadic_rationals(right, left, 2)) == 0
+
+        @test_throws DomainError IntervalWavelets.all_dyadic_rationals(left, right, 1)
     end
 
 
