@@ -42,9 +42,16 @@ end
 
 
 vanishing_moments(B::IntervalScalingFunctionBasis) = vanishing_moments(B.left)
+resolution(B::IntervalScalingFunctionBasis) = resolution(B.left)
+size(B::IntervalScalingFunctionBasis) = 2^B.scale
 
 
 # TODO: Should R have a default value based on J?
+"""
+    interval_scaling_function_basis(p, J, R; a, b)
+
+Return a basis of scaling functions with `p` vanishing moments at scale `J` evaluated at resolution `R` on the interval `[a, b]`.
+"""
 function interval_scaling_function_basis(p::Integer, J::Integer, R::Integer; left_boundary = DyadicRational(0, 0), right_boundary = DyadicRational(1, 0))
     h = interior_filter(p)
     phi = interior_scaling_function(h, R)
@@ -62,6 +69,46 @@ function Base.show(io::IO, B::IntervalScalingFunctionBasis)
 end
 
 
-function reconstruct(coef, B::IntervalScalingFunctionBasis)
+function evaluate_function(B::IntervalScalingFunctionBasis, k::Integer)
+    N = size(B)
+    p = vanishing_moments(B)
+    R = resolution(B)
+    J = B.scale
+
+    if 1 <= k <= p
+        x_index = 0:2^(R - J)*(p + k)
+        x = support(B.left[k - 1])
+        y = B.left[k - 1].(x)
+    elseif p < k <= N - p
+        x_index = 2^(R - J)*(k - p + 1):2^(R - J)*(k + p)
+        # TODO: This is the most widely used branch and we perform the same computation every time
+        x = support(B.interior)
+        y = B.interior.(x)
+    elseif N - p < k <= N
+        x_index = 2^(R - J)*(p + k):2^(R - J)*(p + k)
+        x = support(B.right[N - k])
+        y = B.right[N - k].(x)
+    else 
+        throw(DomainError(k, "There are only $N functions in this basis"))
+    end
+
+    return x_index, y
+end
+
+
+function reconstruct(coef::AbstractVector, B::IntervalScalingFunctionBasis)
+    R = resolution(B)
+    x = all_dyadic_rationals(0, 1, resolution(B))
+    x_translated = x .- B.left_boundary
+
+    N = length(x)
+    #= y = Vector{Float64}(undef, N) =#
+    y = zeros(Float64, N)
+
+    p = vanishing_moments(B)
+
+    s = supports(B.left)
+
+    return x_translated, y
 end
 

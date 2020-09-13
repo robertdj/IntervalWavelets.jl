@@ -24,6 +24,7 @@ export
     numerator,
     reduce,
     resolution,
+    reconstruct,
     side,
     support,
     support_boundaries,
