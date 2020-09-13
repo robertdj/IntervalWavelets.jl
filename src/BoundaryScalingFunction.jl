@@ -28,8 +28,7 @@ end
 
 
 function Base.show(io::IO, L::LeftScalingFunction)
-    print(io, "Left scaling function number ", index(L), " with ", vanishing_moments(L), 
-              " vanishing moments at resolution ", resolution(L))
+    print(io, "Left scaling function number $(index(L)) with $(vanishing_moments(L)) vanishing moments at resolution $(resolution(L))")
 end
 
 
@@ -60,8 +59,7 @@ end
 
 
 function Base.show(io::IO, R::RightScalingFunction)
-    print(io, "Left scaling function number ", index(R), " with ", vanishing_moments(R), 
-              " vanishing moments at resolution ", resolution(R))
+    print(io, "Right scaling function number $(index(L)) with $(vanishing_moments(L)) vanishing moments at resolution $(resolution(L))")
 end
 
 
@@ -107,8 +105,7 @@ end
 
 
 function Base.show(io::IO, B::BoundaryScalingFunctions)
-    print(io, side(B), " scaling functions with ", vanishing_moments(B), 
-              " vanishing moments at resolution ", resolution(B))
+    print(io, "$(side(B)) scaling functions with $(vanishing_moments(B)) vanishing moments at resolution $(resolution(B))")
 end
 
 

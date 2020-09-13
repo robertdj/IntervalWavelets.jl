@@ -43,7 +43,7 @@ end
 
 vanishing_moments(B::IntervalScalingFunctionBasis) = vanishing_moments(B.left)
 resolution(B::IntervalScalingFunctionBasis) = resolution(B.left)
-size(B::IntervalScalingFunctionBasis) = 2^B.scale
+Base.size(B::IntervalScalingFunctionBasis) = 2^B.scale
 
 
 # TODO: Should R have a default value based on J?
@@ -64,8 +64,7 @@ end
 
 
 function Base.show(io::IO, B::IntervalScalingFunctionBasis)
-    print(io, "Basis of scaling functions with ", vanishing_moments(B), " vanishing moments for [", 
-               B.left_boundary, ", ", B.right_boundary, "] at resolution ", resolution(B.left))
+    print(io, "Basis of scaling functions with $(vanishing_moments(B)) vanishing moments for [$(B.left_boundary), $(B.right_boundary)] at resolution $(resolution(B.left))")
 end
 
 

@@ -10,8 +10,7 @@ end
 
 
 function Base.show(io::IO, phi::InteriorScalingFunction)
-    print(io, "Interior scaling function with ", vanishing_moments(phi), 
-              " vanishing moments at resolution ", resolution(phi))
+    print(io, "Interior scaling function with $(vanishing_moments(phi)) vanishing moments at resolution $(resolution(phi))")
 end
 
 
