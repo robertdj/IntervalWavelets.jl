@@ -68,6 +68,11 @@ function Base.show(io::IO, B::IntervalScalingFunctionBasis)
 end
 
 
+"""
+    evaluate_function(B::IntervalScalingFunctionBasis, k::Integer)
+
+The functions in an `IntervalScalingFunctionBasis` are enumerated from 1 through `N = 2^J`, where the first functions are the `LeftScalingFunction`s and the last are the `RightScalingFunction`s.
+"""
 function evaluate_function(B::IntervalScalingFunctionBasis, k::Integer)
     N = size(B)
     p = vanishing_moments(B)
@@ -75,20 +80,20 @@ function evaluate_function(B::IntervalScalingFunctionBasis, k::Integer)
     J = B.scale
 
     if 1 <= k <= p
-        x_index = 0:2^(R - J)*(p + k)
-        x = support(B.left[k - 1])
+        x_index = 1:(p + k - 1)*2^(R - J) + 1
+        x = all_dyadic_rationals(0, DyadicRational(k + p - 1, J), R)
         y = B.left[k - 1].(x)
     elseif p < k <= N - p
-        x_index = 2^(R - J)*(k - p + 1):2^(R - J)*(k + p)
+        x_index = (k - p)*2^(R - J) + 1:(p + k - 1)*2^(R - J) + 1
+        x = all_dyadic_rationals(DyadicRational(k - p, J), DyadicRational(k + p - 1, J), R)
         # TODO: This is the most widely used branch and we perform the same computation every time
-        x = support(B.interior)
         y = B.interior.(x)
     elseif N - p < k <= N
-        x_index = 2^(R - J)*(p + k):2^(R - J)*(p + k)
-        x = support(B.right[N - k])
+        x_index = (k - p)*2^(R - J) + 1:2^R + 1
+        x = all_dyadic_rationals(DyadicRational(k - p, J), 1, R) .- 1
         y = B.right[N - k].(x)
     else 
-        throw(DomainError(k, "There are only $N functions in this basis"))
+        throw(DomainError(k, "Basis functions are index from 1 through $N"))
     end
 
     return x_index, y
@@ -96,18 +101,23 @@ end
 
 
 function reconstruct(coef::AbstractVector, B::IntervalScalingFunctionBasis)
+    if length(coef) != size(B)
+        throw(DimensionMismatch("The number of coefficients does not match the number of basis functions"))
+    end
+
     R = resolution(B)
     x = all_dyadic_rationals(0, 1, resolution(B))
     x_translated = x .- B.left_boundary
 
     N = length(x)
     #= y = Vector{Float64}(undef, N) =#
-    y = zeros(Float64, N)
+    reconstruction = zeros(Float64, N)
 
-    p = vanishing_moments(B)
+    for (index, value) in enumerate(coef)
+        x_index, y = evaluate_function(B, index)
+        reconstruction[x_index] += value * y
+    end
 
-    s = supports(B.left)
-
-    return x_translated, y
+    return x_translated, reconstruction
 end
 

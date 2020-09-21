@@ -29,6 +29,9 @@ function Base.show(io::IO, x::DyadicRational)
 end
 
 
+Base.convert(::Type{DyadicRational}, x::Integer) = DyadicRational(x, 0)
+Base.promote_rule(::Type{DyadicRational}, ::Type{T}) where {T <: Integer} = DyadicRational
+
 Base.:+(x::DyadicRational, k::Integer) = DyadicRational(numerator(x) + (k << resolution(x)), resolution(x))
 Base.:-(x::DyadicRational, k::Integer) = DyadicRational(numerator(x) - (k << resolution(x)), resolution(x))
 Base.:*(x::DyadicRational, a::Integer) = DyadicRational(a * numerator(x), resolution(x))
@@ -55,15 +58,17 @@ Base.:<(x::DyadicRational, y::DyadicRational) = numerator(x) << resolution(y) < 
 Base.:<=(x::DyadicRational, y::DyadicRational) = numerator(x) << resolution(y) <= numerator(y) << resolution(x)
 
 
-#= Base.convert(::Type{DyadicRational}, x::Integer) = Integer(x) =#
-#= Base.promote_rule(::Type{DyadicRational}, ::Type{Integer}) = DyadicRational =#
-
 function Base.Integer(x::DyadicRational)
     if resolution(x) != 0
         throw(InexactError(:Integer, Int64, x))
     end
 
     numerator(x)
+end
+
+
+function all_dyadic_rationals(left, right, R)
+    all_dyadic_rationals(convert(DyadicRational, left), convert(DyadicRational, right), R)
 end
 
 
@@ -77,15 +82,6 @@ function all_dyadic_rationals(left::DyadicRational, right::DyadicRational, R::In
     right_numerator = numerator(right) << (common_resolution - resolution(right))
 
     DyadicRational.(left_numerator:right_numerator, R)
-end
-
-
-function all_dyadic_rationals(left::Integer, right::Integer, R::Integer)
-    if R < 0
-        throw(DomainError(R, "Scale must be non-negative"))
-    end
-
-    DyadicRational.(left*2^R:right*2^R, R)
 end
 
 
