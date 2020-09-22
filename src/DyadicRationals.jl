@@ -35,6 +35,7 @@ Base.promote_rule(::Type{DyadicRational}, ::Type{T}) where {T <: Integer} = Dyad
 Base.:+(x::DyadicRational, k::Integer) = DyadicRational(numerator(x) + (k << resolution(x)), resolution(x))
 Base.:-(x::DyadicRational, k::Integer) = DyadicRational(numerator(x) - (k << resolution(x)), resolution(x))
 Base.:*(x::DyadicRational, a::Integer) = DyadicRational(a * numerator(x), resolution(x))
+Base.:*(x::DyadicRational, y::DyadicRational) = DyadicRational(numerator(x) * numerator(y), resolution(x) + resolution(y))
 Base.:*(a::Integer, x::DyadicRational) = x * a
 Base.:+(a::Integer, x::DyadicRational) = x + a
 Base.:-(a::Integer, x::DyadicRational) = x - a
@@ -42,14 +43,14 @@ Base.:-(a::Integer, x::DyadicRational) = x - a
 # TODO: Make both + and - in one go
 function Base.:+(a::DyadicRational, b::DyadicRational)
     common_numerator = (numerator(a) << resolution(b)) + (numerator(b) << resolution(a))
-    common_resolution = max(resolution(a), resolution(b))
+    common_resolution = resolution(a) + resolution(b)
 
     DyadicRational(common_numerator, common_resolution)
 end
 
 function Base.:-(a::DyadicRational, b::DyadicRational)
     common_numerator = (numerator(a) << resolution(b)) - (numerator(b) << resolution(a))
-    common_resolution = max(resolution(a), resolution(b))
+    common_resolution = resolution(a) + resolution(b)
     
     DyadicRational(common_numerator, common_resolution)
 end

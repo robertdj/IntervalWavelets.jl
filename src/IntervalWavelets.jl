@@ -15,6 +15,7 @@ export
     LEFT,
     RIGHT,
 
+    all_dyadic_rationals,
     boundary_filters,
     boundary_scaling_functions,
     coefficients,

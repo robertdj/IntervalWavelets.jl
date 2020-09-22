@@ -23,9 +23,11 @@ using Test
 
         @test DyadicRational(1, 0) + DyadicRational(1, 1) == DyadicRational(3, 1)
         @test DyadicRational(1, 0) - DyadicRational(1, 1) == DyadicRational(1, 1)
+        @test DyadicRational(1, 1) - DyadicRational(-1, 1) == DyadicRational(1, 0)
 
         @test 2 * DyadicRational(2, 0) == DyadicRational(4, 0)
         @test 3 * DyadicRational(1, 2) == DyadicRational(3, 2)
+        @test DyadicRational(-3, 1) * DyadicRational(-1, 2) == DyadicRational(3, 3)
     end
 
 
@@ -35,8 +37,8 @@ using Test
 
         left = DyadicRational(-1, 1)
         right = DyadicRational(1, 2)
-        @test IntervalWavelets.all_dyadic_rationals(left, right, 2) == DyadicRational.(-2:1, 2)
-        @test length(IntervalWavelets.all_dyadic_rationals(right, left, 2)) == 0
+        @test all_dyadic_rationals(left, right, 2) == DyadicRational.(-2:1, 2)
+        @test length(all_dyadic_rationals(right, left, 2)) == 0
 
         @test_throws DomainError IntervalWavelets.all_dyadic_rationals(left, right, 1)
     end
