@@ -82,32 +82,33 @@ function evaluate_function(B::IntervalScalingFunctionBasis, k::Integer)
     if 1 <= k <= p
         x_index = 1:(p + k - 1)*2^(R - J) + 1
         x = all_dyadic_rationals(0, DyadicRational(k + p - 1, J), R)
-        y = B.left[k - 1].(x)
+        y = B.left[k - 1].(2^J * x)
     elseif p < k <= N - p
         x_index = (k - p)*2^(R - J) + 1:(p + k - 1)*2^(R - J) + 1
         x = all_dyadic_rationals(DyadicRational(k - p, J), DyadicRational(k + p - 1, J), R)
         # TODO: This is the most widely used branch and we perform the same computation every time
-        y = B.interior.(x)
+        y = B.interior.(2^J * x .- k)
     elseif N - p < k <= N
         x_index = (k - p)*2^(R - J) + 1:2^R + 1
         x = all_dyadic_rationals(DyadicRational(k - p, J), 1, R) .- 1
-        y = B.right[N - k].(x)
+        y = B.right[N - k].(2^J * x)
     else 
-        throw(DomainError(k, "Basis functions are index from 1 through $N"))
+        throw(DomainError(k, "Basis functions are indexed from 1 through $N"))
     end
 
+    # return x_index, 2^(J/2) * y
     return x_index, y
 end
 
 
-function reconstruct(coef::AbstractVector, B::IntervalScalingFunctionBasis)
+function reconstruct(B::IntervalScalingFunctionBasis, coef::AbstractVector)
     if length(coef) != size(B)
         throw(DimensionMismatch("The number of coefficients does not match the number of basis functions"))
     end
 
     R = resolution(B)
     x = all_dyadic_rationals(0, 1, resolution(B))
-    x_translated = x .- B.left_boundary
+    x_translated = (B.right_boundary - B.left_boundary) * x .+ B.left_boundary
 
     N = length(x)
     #= y = Vector{Float64}(undef, N) =#
