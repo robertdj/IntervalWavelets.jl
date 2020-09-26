@@ -22,37 +22,40 @@ end
     B = interval_scaling_function_basis(p, J, R)
 
     x = all_dyadic_rationals(B.left_boundary, B.right_boundary, R)
+    L = boundary_scaling_functions(LEFT, p, R)
     for k in 1:2
         coef = zeros(2^J)
         coef[k] = 1
 
-        y = B.left[k - 1].(2^J * x)
+        y = 2.0^(J/2) * L[k - 1].(2^J * x)
         xx, z = reconstruct(B, coef)
 
         @test x == xx
-        @test y == z
+        @test y ≈ z atol = 1e-8
     end
 
-    # for k in 3:6
-    #     coef = zeros(2^J)
-    #     coef[k] = 1
+    phi = interior_scaling_function(interior_filter(p), R)
+    for k in 3:6
+        coef = zeros(2^J)
+        coef[k] = 1
 
-    #     y = B.interior.(2^J * x .- k)
-    #     xx, z = reconstruct(B, coef)
+        translation = k - 1
+        y = 2.0^(J/2) * phi.(2^J * x .- translation)
+        xx, z = reconstruct(B, coef)
 
-    #     @test x == xx
-    #     @test y == z
-    # end
+        @test x == xx
+        @test y ≈ z atol = 1e-8
+    end
 
+    right = boundary_scaling_functions(RIGHT, p, R)
     for k in 7:8
         coef = zeros(2^J)
         coef[k] = 1
 
-        y = B.right[8 - k].(2^J * x .- B.right_boundary)
+        y = 2.0^(J/2) * right[8 - k].(2^J * (x .- B.right_boundary))
         xx, z = reconstruct(B, coef)
 
         @test x == xx
-        # @test y == z
+        @test y ≈ z atol = 1e-8
     end
 end
-
