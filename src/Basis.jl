@@ -141,6 +141,36 @@ function reconstruct(B::IntervalScalingFunctionBasis, coef::AbstractVector)
 end
 
 
+function reconstruct(B::IntervalScalingFunctionBasis, coef::AbstractMatrix)
+    if !all(size(coef) .== size(B))
+        throw(DimensionMismatch("The number of coefficients does not match the number of basis functions"))
+    end
+
+    N = n_eval(B)
+    row_values = Vector{Float64}(undef, n_eval(B))
+    col_values = similar(row_values)
+    y = col_values * row_values'
+
+    x = all_dyadic_rationals(0, 1, resolution(B))
+    reconstruction = zeros(Float64, length(x), length(x))
+
+    for row_count in 1:size(coef, 1)
+        row_index = evaluate!(row_values, B, row_count)
+        for col_count in 1:size(coef, 2)
+            col_index = evaluate!(col_values, B, col_count)
+
+            fill!(y, 0.0)
+            alpha = coef[col_count, row_count]
+            LinearAlgebra.BLAS.ger!(alpha, col_values, row_values, y)
+
+            reconstruction[col_index, row_index] += y
+        end
+    end
+
+    return reconstruction
+end
+
+
 @recipe function f(B::IntervalScalingFunctionBasis)
     for idx in 1:size(B)
         @series begin
