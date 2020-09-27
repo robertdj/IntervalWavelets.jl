@@ -163,7 +163,11 @@ function reconstruct(B::IntervalScalingFunctionBasis, coef::AbstractMatrix)
             alpha = coef[col_count, row_count]
             LinearAlgebra.BLAS.ger!(alpha, col_values, row_values, y)
 
-            reconstruction[col_index, row_index] += y
+            # A loop use *a lot* less memory than
+            # reconstruction[col_index, row_index] += y
+            for (yi, ri) in enumerate(col_index), (yj, rj) in enumerate(row_index)
+                reconstruction[ri, rj] += y[yi, yj]
+            end
         end
     end
 
