@@ -65,7 +65,7 @@ using Test
     @testset "Reconstruct constant function" begin
         B = interval_scaling_function_basis(2, 3, 4)
 
-        # Coefficients found manually by solving [ B[j](x_i) ] * coef = ones()
+        # Coefficients found by solving [ B[j](x_i) ] * coef = ones()
         coef = [
             0.128004734,
             0.354064418,

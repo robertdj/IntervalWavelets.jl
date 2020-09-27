@@ -10,38 +10,29 @@ struct IntervalScalingFunctionBasis
     left_boundary::DyadicRational
     right_boundary::DyadicRational
 
-    function IntervalScalingFunctionBasis(left, interior, right, p, scale, resolution, left_boundary, right_boundary)
-        #= if right_boundary <= left_boundary =#
-        #=     throw(DomainError(left_boundary, "Reconstruction interval is degenerate")) =#
-        #= end =#
+    function IntervalScalingFunctionBasis(left, interior, right, p, scale, R, left_boundary, right_boundary)
+        if right_boundary <= left_boundary
+            throw(error("Reconstruction interval is degenerate"))
+        end
 
-        #= p = vanishing_moments(left) =#
-        #= if !(p == vanishing_moments(interior) == vanishing_moments(right)) =#
-        #=     throw(DomainError(p, "All basis function must have the same number of vanishing moments")) =#
-        #= end =#
+        if R < scale
+            throw(error("Scale of basis functions must be greater than the R"))
+        end
 
-        #= R = resolution(left) =#
-        #= if R < scale =#
-        #=     throw(DomainError(scale, "Scale of basis functions must be greater than the resolution")) =#
-        #= end =#
+        length_of_support = 2*p - 1
+        if length_of_support > 2^scale
+            throw(DomainError(scale, "Number of vanishing moments is too large for the scale"))
+        end
 
-        #= length_of_support = 2*p - 1 =#
-        #= if length_of_support > 2^scale =#
-        #=     throw(DomainError(scale, "Number of vanishing moments is too large for the scale")) =#
-        #= end =#
+        if !(length(interior) == length(left[end]) == length(right[end]))
+            throw(error("All basis functions must be evaluated at the same R"))
+        end
 
-        #= if !(R == resolution(interior) == resolution(right)) =#
-        #=     throw(DomainError(R, "All basis function must be evaluated at the same resolution")) =#
-        #= end =#
+        if R < resolution(left_boundary) || R < resolution(right_boundary)
+            throw(DomainError(R, "The R of basis functions should be at least that of the endpoints"))
+        end
 
-        #= if R < resolution(left_boundary) || R < resolution(right_boundary) =#
-        #=     throw(DomainError(R, "The resolution of basis functions should be at least that of the endpoints")) =#
-        #= end =#
-
-        #= left_values = [left[k].(all_dyadic_rationals(0 =#
-
-        #= new(left_values, interior, right, scale, left_boundary, right_boundary) =#
-        new(left, interior, right, p, scale, resolution, left_boundary, right_boundary)
+        new(left, interior, right, p, scale, R, left_boundary, right_boundary)
     end
 end
 
