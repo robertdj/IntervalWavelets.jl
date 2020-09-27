@@ -9,6 +9,11 @@ struct InteriorScalingFunction <: AbstractScalingFunction
 end
 
 
+function Base.show(io::IO, phi::InteriorScalingFunction)
+    print(io, "Interior scaling function with $(vanishing_moments(phi)) vanishing moments at resolution $(resolution(phi))")
+end
+
+
 Base.values(phi::AbstractScalingFunction) = phi.values
 filter(phi::InteriorScalingFunction) = phi.filter
 vanishing_moments(phi::InteriorScalingFunction) = phi |> filter |> vanishing_moments

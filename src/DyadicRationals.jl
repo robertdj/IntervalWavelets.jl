@@ -14,50 +14,79 @@ struct DyadicRational <: AbstractFloat
     end
 end
 
-numerator(dr::DyadicRational) = dr.numerator
-resolution(dr::DyadicRational) = dr.R
-
-Base.:+(dr::DyadicRational, k::Integer) = DyadicRational(numerator(dr) + (k << resolution(dr)), resolution(dr))
-Base.:-(dr::DyadicRational, k::Integer) = DyadicRational(numerator(dr) - (k << resolution(dr)), resolution(dr))
-Base.:*(a::Integer, dr::DyadicRational) = DyadicRational(a * numerator(dr), resolution(dr))
+numerator(x::DyadicRational) = x.numerator
+resolution(x::DyadicRational) = x.R
 
 
-function Base.show(io::IO, dr::DyadicRational)
-    if resolution(dr) == 0
-        print(io, numerator(dr))
-    elseif resolution(dr) == 1
-        print(io, numerator(dr), "/2")
+function Base.show(io::IO, x::DyadicRational)
+    if resolution(x) == 0
+        print(io, numerator(x))
+    elseif resolution(x) == 1
+        print(io, numerator(x), "/2")
     else
-        print(io, numerator(dr), "/2^", resolution(dr))
+        print(io, numerator(x), "/2^", resolution(x))
     end
 end
 
 
-#= Base.convert(::Type{DyadicRational}, x::Integer) = Integer(x) =#
-#= Base.promote_rule(::Type{DyadicRational}, ::Type{Integer}) = DyadicRational =#
+Base.convert(::Type{DyadicRational}, x::Integer) = DyadicRational(x, 0)
+Base.promote_rule(::Type{DyadicRational}, ::Type{T}) where {T <: Integer} = DyadicRational
 
-#= Base.:<(x::DyadicRational, y::DyadicRational) = numerator(x) << resolution(y) < numerator(y) << resolution(x) =#
-#= Base.:<=(x::DyadicRational, y::DyadicRational) = numerator(x) << resolution(y) <= numerator(y) << resolution(x) =#
+Base.:+(x::DyadicRational, k::Integer) = DyadicRational(numerator(x) + (k << resolution(x)), resolution(x))
+Base.:-(x::DyadicRational, k::Integer) = DyadicRational(numerator(x) - (k << resolution(x)), resolution(x))
+Base.:*(x::DyadicRational, a::Integer) = DyadicRational(a * numerator(x), resolution(x))
+Base.:*(x::DyadicRational, y::DyadicRational) = DyadicRational(numerator(x) * numerator(y), resolution(x) + resolution(y))
+Base.:*(a::Integer, x::DyadicRational) = x * a
+Base.:+(a::Integer, x::DyadicRational) = x + a
+Base.:-(a::Integer, x::DyadicRational) = x - a
 
-function Base.Integer(dr::DyadicRational)
-    if resolution(dr) != 0
-        throw(InexactError(:Integer, Int64, dr))
+# TODO: Make both + and - in one go
+function Base.:+(a::DyadicRational, b::DyadicRational)
+    common_numerator = (numerator(a) << resolution(b)) + (numerator(b) << resolution(a))
+    common_resolution = resolution(a) + resolution(b)
+
+    DyadicRational(common_numerator, common_resolution)
+end
+
+function Base.:-(a::DyadicRational, b::DyadicRational)
+    common_numerator = (numerator(a) << resolution(b)) - (numerator(b) << resolution(a))
+    common_resolution = resolution(a) + resolution(b)
+    
+    DyadicRational(common_numerator, common_resolution)
+end
+
+Base.:<(x::DyadicRational, y::DyadicRational) = numerator(x) << resolution(y) < numerator(y) << resolution(x)
+Base.:<=(x::DyadicRational, y::DyadicRational) = numerator(x) << resolution(y) <= numerator(y) << resolution(x)
+
+
+function Base.Integer(x::DyadicRational)
+    if resolution(x) != 0
+        throw(InexactError(:Integer, Int64, x))
     end
 
-    numerator(dr)
+    numerator(x)
 end
 
 
-function all_dyadic_rationals(left::Integer, right::Integer, R::Integer)
-    if R < 0
-        throw(DomainError(R, "Scale must be non-negative"))
-    end
-
-    DyadicRational.(left*2^R:right*2^R, R)
+function all_dyadic_rationals(left, right, R)
+    all_dyadic_rationals(convert(DyadicRational, left), convert(DyadicRational, right), R)
 end
 
 
-function AbstractFloat(dr::DyadicRational)
-    numerator(dr) / 2.0^resolution(dr)
+function all_dyadic_rationals(left::DyadicRational, right::DyadicRational, R::Integer)
+    if R < resolution(left) || R < resolution(right)
+        throw(DomainError(R, "Resolution must be at least that of the endpoints"))
+    end
+
+    common_resolution = max(resolution(left), resolution(right), R)
+    left_numerator = numerator(left) << (common_resolution - resolution(left))
+    right_numerator = numerator(right) << (common_resolution - resolution(right))
+
+    DyadicRational.(left_numerator:right_numerator, R)
+end
+
+
+function AbstractFloat(x::DyadicRational)
+    numerator(x) / 2.0^resolution(x)
 end
 
