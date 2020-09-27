@@ -9,6 +9,7 @@ struct IntervalScalingFunctionBasis
 
     left_boundary::DyadicRational
     right_boundary::DyadicRational
+    support::Vector{DyadicRational}
 
     function IntervalScalingFunctionBasis(left, interior, right, p, scale, R, left_boundary, right_boundary)
         if right_boundary <= left_boundary
@@ -24,15 +25,17 @@ struct IntervalScalingFunctionBasis
             throw(DomainError(scale, "Number of vanishing moments is too large for the scale"))
         end
 
-        if !(length(interior) == length(left[end]) == length(right[end]))
-            throw(error("All basis functions must be evaluated at the same R"))
-        end
+        # if !(length(interior) == length(left[end]) == length(right[end]))
+        #     throw(error("All basis functions must be evaluated at the same R"))
+        # end
 
         if R < resolution(left_boundary) || R < resolution(right_boundary)
             throw(DomainError(R, "The R of basis functions should be at least that of the endpoints"))
         end
 
-        new(left, interior, right, p, scale, R, left_boundary, right_boundary)
+        s = all_dyadic_rationals(left_boundary, right_boundary, R)
+
+        new(left, interior, right, p, scale, R, left_boundary, right_boundary, s)
     end
 end
 
@@ -40,6 +43,7 @@ end
 vanishing_moments(B::IntervalScalingFunctionBasis) = B.vanishing_moments
 resolution(B::IntervalScalingFunctionBasis) = B.resolution
 Base.size(B::IntervalScalingFunctionBasis) = 2^B.scale
+n_eval(B::IntervalScalingFunctionBasis) = length(B.interior)
 
 
 """
@@ -56,18 +60,12 @@ function interval_scaling_function_basis(p::Integer, J::Integer, R::Integer; lef
     resolution = max(R - J, ceil(Int, log2(p)) + 1)
 
     left = boundary_scaling_functions(LEFT, p, resolution)
+    left_x = all_dyadic_rationals(support_boundaries(left[p - 1])..., R - J)
+    left_values = [2.0^(J/2) * left[k].(left_x) for k in 0:p - 1]
+
     right = boundary_scaling_functions(RIGHT, p, resolution)
-
-    left_values = [Vector{Float64}(undef, 2^(R - J) * (p + k) + 1) for k in 0:p-1]
-    right_values = [Vector{Float64}(undef, 2^(R - J) * (p + k) + 1) for k in 0:p-1]
-
-    for k in 0:p - 1
-        left_x = all_dyadic_rationals(support_boundaries(left[k])..., R - J)
-        left_values[k + 1] = 2.0^(J/2) * left[k].(left_x)
-
-        right_x = all_dyadic_rationals(support_boundaries(right[k])..., R - J)
-        right_values[k + 1] = 2.0^(J/2) * right[k].(right_x)
-    end
+    right_x = all_dyadic_rationals(support_boundaries(right[p - 1])..., R - J)
+    right_values = [2.0^(J/2) * right[k].(right_x) for k in 0:p - 1]
 
     IntervalScalingFunctionBasis(left_values, interior_values, right_values, p, J, R, left_boundary, right_boundary)
 end
@@ -84,38 +82,55 @@ function Base.getindex(B::IntervalScalingFunctionBasis, k::Integer)
     R = resolution(B)
     J = B.scale
 
+    y = Vector{Float64}(undef, n_eval(B))
+    x_index = evaluate!(y, B, k)
+
+    if 1 <= k < p
+        y = y[1:length(x_index)]
+    elseif N - p + 1 < k <= N
+        start_index = length(y) - length(x_index) + 1
+        y = y[start_index:end]
+    end
+
+    return B.support[x_index], y
+end
+
+
+function evaluate!(y::Vector{Float64} ,B::IntervalScalingFunctionBasis, k::Integer)
+    N = size(B)
+    p = vanishing_moments(B)
+    R = resolution(B)
+    J = B.scale
+
     if 1 <= k <= p
-        x_index = 1:(p + k - 1)*2^(R - J) + 1
-        y = B.left[k]
+        x_index = 1:(2p - 1)*2^(R - J) + 1
+        copy!(y, B.left[k])
     elseif p < k <= N - p
         x_index = (k - p)*2^(R - J) + 1:(p + k - 1)*2^(R - J) + 1
-        y = B.interior
+        copy!(y, B.interior)
     elseif N - p < k <= N
-        x_index = (k - p)*2^(R - J) + 1:2^R + 1
-        y = B.right[N - k + 1]
+        x_index = (N - 2p + 1)*2^(R - J) + 1:2^R + 1
+        copy!(y, B.right[N - k + 1])
     else 
         throw(DomainError(k, "Basis functions are indexed from 1 through $N"))
     end
 
-    return x_index, y
+    return x_index
 end
-
 
 function reconstruct(B::IntervalScalingFunctionBasis, coef::AbstractVector)
     if length(coef) != size(B)
         throw(DimensionMismatch("The number of coefficients does not match the number of basis functions"))
     end
 
-    R = resolution(B)
     x = all_dyadic_rationals(0, 1, resolution(B))
     x_translated = (B.right_boundary - B.left_boundary) * x .+ B.left_boundary
 
-    N = length(x)
-    #= y = Vector{Float64}(undef, N) =#
-    reconstruction = zeros(Float64, N)
+    y = Vector{Float64}(undef, n_eval(B))
+    reconstruction = zeros(Float64, length(x))
 
     for (index, value) in enumerate(coef)
-        x_index, y = B[index]
+        x_index = evaluate!(y, B, index)
         reconstruction[x_index] += value * y
     end
 
