@@ -134,7 +134,8 @@ function reconstruct(B::IntervalScalingFunctionBasis, coef::AbstractVector)
 
     for (index, value) in enumerate(coef)
         x_index = evaluate!(y, B, index)
-        reconstruction[x_index] += value * y
+        r = @view reconstruction[x_index]
+        LinearAlgebra.BLAS.axpy!(value, y, r)
     end
 
     return x_translated, reconstruction
