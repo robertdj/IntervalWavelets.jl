@@ -25,9 +25,11 @@ struct IntervalScalingFunctionBasis
             throw(DomainError(scale, "Number of vanishing moments is too large for the scale"))
         end
 
-        # if !(length(interior) == length(left[end]) == length(right[end]))
-        #     throw(error("All basis functions must be evaluated at the same R"))
-        # end
+        left_lengths = map(length, left)
+        right_lengths = map(length, right)
+        if !all(length(interior) .== left_lengths .== right_lengths)
+            throw(error("All basis functions must have the same length"))
+        end
 
         if R < resolution(left_boundary) || R < resolution(right_boundary)
             throw(DomainError(R, "The R of basis functions should be at least that of the endpoints"))
@@ -96,7 +98,7 @@ function Base.getindex(B::IntervalScalingFunctionBasis, k::Integer)
 end
 
 
-function evaluate!(y::Vector{Float64} ,B::IntervalScalingFunctionBasis, k::Integer)
+function evaluate!(y::Vector{Float64}, B::IntervalScalingFunctionBasis, k::Integer)
     N = size(B)
     p = vanishing_moments(B)
     R = resolution(B)
@@ -118,6 +120,7 @@ function evaluate!(y::Vector{Float64} ,B::IntervalScalingFunctionBasis, k::Integ
     return x_index
 end
 
+
 function reconstruct(B::IntervalScalingFunctionBasis, coef::AbstractVector)
     if length(coef) != size(B)
         throw(DimensionMismatch("The number of coefficients does not match the number of basis functions"))
@@ -135,5 +138,15 @@ function reconstruct(B::IntervalScalingFunctionBasis, coef::AbstractVector)
     end
 
     return x_translated, reconstruction
+end
+
+
+@recipe function f(B::IntervalScalingFunctionBasis)
+    for idx in 1:size(B)
+        @series begin
+            x, y = B[idx]
+            float.(x), y
+        end
+    end
 end
 
