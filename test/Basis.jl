@@ -62,7 +62,7 @@ using Test
     end
 
 
-    @testset "Reconstruct constant function" begin
+    @testset "Reconstruct constant function 1D" begin
         B = interval_scaling_function_basis(2, 3, 4)
 
         # Coefficients found by solving [ B[j](x_i) ] * coef = ones()
@@ -81,4 +81,28 @@ using Test
 
         @test y ≈ ones(17) atol = 1e-8
     end
+
+
+    @testset "Reconstruct constant function 2D" begin
+        B = interval_scaling_function_basis(2, 3, 4)
+
+        # Coefficients reused from 1D
+        coef1 = [
+            0.128004734,
+            0.354064418,
+            0.353553390,
+            0.353553390,
+            0.353553390,
+            0.353553390,
+            0.385317706,
+            0.458021222
+        ]
+
+        coef = coef1 * coef1'
+
+        y = reconstruct(B, coef)
+
+        @test y ≈ ones(17, 17) atol = 1e-7
+    end
 end
+
