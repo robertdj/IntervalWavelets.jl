@@ -12,7 +12,23 @@ using Test
 
         x = reconstruct(B, ones(2^J))[1]
 
+        # This only works because the interval has length 1
         @test x == all_dyadic_rationals(l, r, R)
+    end
+
+
+    @testset "Support of basis function" begin
+        l = DyadicRational(-1, 1)
+        r = DyadicRational(1, 0)
+        B = interval_scaling_function_basis(2, 3, 4; left_boundary = l, right_boundary = r)
+
+        # Left boundary functions
+        @test B[1][1][1] == l
+        @test B[2][1][1] == l
+
+        # Right boundary functions
+        @test B[7][1][end] == r
+        @test B[8][1][end] == r
     end
 
 
@@ -97,7 +113,6 @@ using Test
             0.385317706,
             0.458021222
         ]
-
         coef = coef1 * coef1'
 
         y = reconstruct(B, coef)

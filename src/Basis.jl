@@ -35,9 +35,10 @@ struct IntervalScalingFunctionBasis
             throw(DomainError(R, "The R of basis functions should be at least that of the endpoints"))
         end
 
-        s = all_dyadic_rationals(left_boundary, right_boundary, R)
+        s = all_dyadic_rationals(0, 1, R)
+        s_translated = (right_boundary - left_boundary) * s .+ left_boundary
 
-        new(left, interior, right, p, scale, R, left_boundary, right_boundary, s)
+        new(left, interior, right, p, scale, R, left_boundary, right_boundary, s_translated)
     end
 end
 
