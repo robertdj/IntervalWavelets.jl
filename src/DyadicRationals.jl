@@ -32,31 +32,33 @@ end
 Base.convert(::Type{DyadicRational}, x::Integer) = DyadicRational(x, 0)
 Base.promote_rule(::Type{DyadicRational}, ::Type{T}) where {T <: Integer} = DyadicRational
 
-Base.:+(x::DyadicRational, k::Integer) = DyadicRational(numerator(x) + (k << resolution(x)), resolution(x))
-Base.:-(x::DyadicRational, k::Integer) = DyadicRational(numerator(x) - (k << resolution(x)), resolution(x))
-Base.:*(x::DyadicRational, a::Integer) = DyadicRational(a * numerator(x), resolution(x))
 Base.:*(x::DyadicRational, y::DyadicRational) = DyadicRational(numerator(x) * numerator(y), resolution(x) + resolution(y))
-Base.:*(a::Integer, x::DyadicRational) = x * a
-Base.:+(a::Integer, x::DyadicRational) = x + a
-Base.:-(a::Integer, x::DyadicRational) = x - a
+Base.:*(x::DyadicRational, k::Integer) = DyadicRational(k * numerator(x), resolution(x))
+Base.:*(k::Integer, x::DyadicRational) = x * k
 
-# TODO: Make both + and - in one go
-function Base.:+(a::DyadicRational, b::DyadicRational)
-    common_numerator = (numerator(a) << resolution(b)) + (numerator(b) << resolution(a))
-    common_resolution = resolution(a) + resolution(b)
+for op in [:+, :-]
+    @eval begin
+        Base.$op(k::Integer, x::DyadicRational) = $op(x, k)
 
-    DyadicRational(common_numerator, common_resolution)
+        function Base.$op(x::DyadicRational, k::Integer)
+            new_numerator = $op(numerator(x), k << resolution(x))
+            DyadicRational(new_numerator, resolution(x))
+        end
+
+        function Base.$op(a::DyadicRational, b::DyadicRational)
+            common_numerator = $op(numerator(a) << resolution(b), numerator(b) << resolution(a))
+            common_resolution = resolution(a) + resolution(b)
+
+            DyadicRational(common_numerator, common_resolution)
+        end
+    end
 end
 
-function Base.:-(a::DyadicRational, b::DyadicRational)
-    common_numerator = (numerator(a) << resolution(b)) - (numerator(b) << resolution(a))
-    common_resolution = resolution(a) + resolution(b)
-    
-    DyadicRational(common_numerator, common_resolution)
+for op in [:<, :<=]
+    @eval begin
+        Base.$op(x::DyadicRational, y::DyadicRational) = $op(numerator(x) << resolution(y), numerator(y) << resolution(x))
+    end
 end
-
-Base.:<(x::DyadicRational, y::DyadicRational) = numerator(x) << resolution(y) < numerator(y) << resolution(x)
-Base.:<=(x::DyadicRational, y::DyadicRational) = numerator(x) << resolution(y) <= numerator(y) << resolution(x)
 
 
 function Base.Integer(x::DyadicRational)

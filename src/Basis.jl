@@ -35,9 +35,10 @@ struct IntervalScalingFunctionBasis
             throw(DomainError(R, "The R of basis functions should be at least that of the endpoints"))
         end
 
-        s = all_dyadic_rationals(left_boundary, right_boundary, R)
+        s = all_dyadic_rationals(0, 1, R)
+        s_translated = (right_boundary - left_boundary) * s .+ left_boundary
 
-        new(left, interior, right, p, scale, R, left_boundary, right_boundary, s)
+        new(left, interior, right, p, scale, R, left_boundary, right_boundary, s_translated)
     end
 end
 
@@ -134,10 +135,41 @@ function reconstruct(B::IntervalScalingFunctionBasis, coef::AbstractVector)
 
     for (index, value) in enumerate(coef)
         x_index = evaluate!(y, B, index)
-        reconstruction[x_index] += value * y
+        r = @view reconstruction[x_index]
+        LinearAlgebra.BLAS.axpy!(value, y, r)
     end
 
     return x_translated, reconstruction
+end
+
+
+function reconstruct(B::IntervalScalingFunctionBasis, coef::AbstractMatrix)
+    if !all(size(coef) .== size(B))
+        throw(DimensionMismatch("The number of coefficients does not match the number of basis functions"))
+    end
+
+    N = n_eval(B)
+    row_values = Vector{Float64}(undef, n_eval(B))
+    col_values = similar(row_values)
+
+    x = all_dyadic_rationals(0, 1, resolution(B))
+    reconstruction = zeros(Float64, length(x), length(x))
+
+    for row_count in 1:size(coef, 1)
+        row_index = evaluate!(row_values, B, row_count)
+        for col_count in 1:size(coef, 2)
+            col_index = evaluate!(col_values, B, col_count)
+
+            # A loop use *a lot* less memory than a 2D BLAS.axpy!
+            alpha = coef[col_count, row_count]
+            r = @view reconstruction[col_index, row_index]
+            for i in 1:N, j in 1:N
+                r[i, j] += alpha * col_values[i] * row_values[j]
+            end
+        end
+    end
+
+    return reconstruction
 end
 
 
