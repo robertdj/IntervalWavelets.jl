@@ -151,7 +151,6 @@ function reconstruct(B::IntervalScalingFunctionBasis, coef::AbstractMatrix)
     N = n_eval(B)
     row_values = Vector{Float64}(undef, n_eval(B))
     col_values = similar(row_values)
-    y = col_values * row_values'
 
     x = all_dyadic_rationals(0, 1, resolution(B))
     reconstruction = zeros(Float64, length(x), length(x))
@@ -161,14 +160,11 @@ function reconstruct(B::IntervalScalingFunctionBasis, coef::AbstractMatrix)
         for col_count in 1:size(coef, 2)
             col_index = evaluate!(col_values, B, col_count)
 
-            fill!(y, 0.0)
+            # A loop use *a lot* less memory than a 2D BLAS.axpy!
             alpha = coef[col_count, row_count]
-            LinearAlgebra.BLAS.ger!(alpha, col_values, row_values, y)
-
-            # A loop use *a lot* less memory than
-            # reconstruction[col_index, row_index] += y
-            for (yi, ri) in enumerate(col_index), (yj, rj) in enumerate(row_index)
-                reconstruction[ri, rj] += y[yi, yj]
+            r = @view reconstruction[col_index, row_index]
+            for i in 1:N, j in 1:N
+                r[i, j] += alpha * col_values[i] * row_values[j]
             end
         end
     end
