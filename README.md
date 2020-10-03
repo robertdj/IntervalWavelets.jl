@@ -112,6 +112,8 @@ x, y = reconstruct(B, ones(8));
 
 
 
+If the coefficients are a matrix the reconstruction is also a matrix (representing an image). 
+
 
 # Weave
 
