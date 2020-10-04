@@ -1,9 +1,9 @@
 using IntervalWavelets
-using Base.Test
+using Test
 
-include("Quad.jl")
-include("DyadicPoints.jl")
-include("Daubechies.jl")
-include("BoundaryDaubechies.jl")
-include("Reconstruction.jl")
+include("DyadicRationals.jl")
+include("Filters.jl")
+include("InteriorScalingFunction.jl")
+include("BoundaryScalingFunction.jl")
+include("Basis.jl")
 

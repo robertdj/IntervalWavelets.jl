@@ -1,51 +1,48 @@
 module IntervalWavelets
 
-using Compat
-import Compat: view, String
+import OffsetArrays
+import LinearAlgebra
+import Wavelets
 
-import Wavelets: wavelet, WT
+using RecipesBase
 
-export
-	# Types
-	DaubSupport,
-	Interval,
-	InteriorFilter,
-	BoundaryFilter,
+export 
+    DyadicRational,
+    Filter,
+    InteriorFilter,
+    BoundaryFilter,
+    Sides,
+    LEFT,
+    RIGHT,
 
-	# Filter functions
-	left,
-	right,
-	support,
-	coef,
-	van_moment,
-	ifilter,
-	bfilter,
-
-	# Dyadic rationals
-	dyadic_rationals,
-	isuniform,
-	x2index,
-	index2x,
-	x2index,
-	index2x,
-
-	# Scaling functions
-	HaarScaling,
-	DaubScaling,
-
-	# Reconstruction
-	IntervalScaling,
-	weval
+    all_dyadic_rationals,
+    boundary_filters,
+    boundary_scaling_functions,
+    coefficients,
+    filters,
+    interior_filter,
+    interior_scaling_function,
+    numerator,
+    reduce,
+    resolution,
+    reconstruct,
+    side,
+    support,
+    support_boundaries,
+    vanishing_moments,
+    interval_scaling_function_basis
 
 const sqrt2 = sqrt(2)
 
-include("DyadicPoints.jl")
+include("DyadicRationals.jl")
+include("Enums.jl")
 include("Filters.jl")
+include("Filters/Interior.jl")
+include("Filters/Left.jl")
+include("Filters/Right.jl")
+include("InteriorScalingFunction.jl")
+include("BoundaryScalingFunction.jl")
+include("Basis.jl")
 include("Misc.jl")
-include("Daubechies.jl")
-include("Vectorization.jl")
-include("BoundaryDaubechies.jl")
-include("Quad.jl")
-include("Reconstruction.jl")
 
 end # module

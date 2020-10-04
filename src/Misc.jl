@@ -1,77 +1,22 @@
-function unit(x::AbstractVector, entry::Integer)
-	unit(eltype(x), length(x), entry)
+"""
+    eigval1(A::Matrix) -> Vector
+
+If `A` has 1 as an eigenvalue of multiplicity 1, the corresponding eigenvector is returned.
+Otherwise, an error is thrown.
+"""
+function eigval1(A::AbstractMatrix)::Vector{Float64}
+    eigen_values = LinearAlgebra.eigvals(A)
+
+    if !isreal(eigen_values)
+        throw(DomainError(eigen_values, "Eigen values should be real"))
+    end
+
+    eigen_value_one = findall(eigen_values .≈ 1)
+
+    if length(eigen_value_one) != 1
+        throw(DomainError(eigen_value_one, "The eigenvalue 1 should have multiplicity 1"))
+    end
+
+    return LinearAlgebra.eigvecs(A)[:, eigen_value_one[1]]
 end
-
-function unit(length::Integer, entry::Integer)
-	unit(Float64, length, entry)
-end
-
-function unit(T::Type, length::Integer, entry::Integer)
-	u = zeros(T, length)
-	u[entry] = one(T)
-	return u
-end
-
-@doc """
-	eigval1(A::Matrix) -> Vector
-
-Returns a unit eigenvector of `A` for the eigenvalue 1 if this eigenspace is 1D.
-Otherwise, return an error.
-"""->
-function eigval1(A::DenseMatrix{Float64})
-	E = eigfact(A)
-	# Types are hardcoded; otherwise instability occurs
-	isreal(E[:values]) || throw(DomainError())
-	vals = E[:values]::Vector{Float64}
-	vecs = E[:vectors]::Matrix{Float64}
-
-	# Find index of eigenvalue 1
-	eval1_index = Vector{Int64}()
-	for i in 1:length(vals)
-		if isapprox(vals[i], 1.0)
-			push!(eval1_index, i)
-		end
-	end
-
-	if isempty(eval1_index)
-		error("1 is not an eigenvalue")
-	elseif length(eval1_index) >= 2
-		error("The eigenspace of 1 is more than 1D")
-	end
-
-	return vecs[:,eval1_index[]]
-end
-
-function van_moment(wavename::String)
-	lowername = lowercase( wavename )
-	WT.vanishingmoments( WT.eval(parse(lowername)) )::Int64
-end
-
-
-@doc """
-	support(wavename) -> DaubSupport
-
-The support of the Daubechies scaling function `wavename`.
-"""->
-function support(wavename::String)
-	vm = van_moment(wavename)
-	return DaubSupport(-vm+1, vm)
-end
-
-
-@doc """
-	isinside(x, S::DaubSupport) -> Bool
-
-Returns `true` if `x` is inside `S`.
-"""->
-@inline isinside(x, S::DaubSupport) = left(S) <= x <= right(S)
-
-# Convert between values and indices of a vector with the integers in the support S
-@inline x2index(x::Integer, S::DaubSupport) = x + 1 - left(S)
-@inline index2x(idx::Integer, S::DaubSupport) = idx - 1 + left(S)
-
-# Convert between values and indices of a vector with dyadic rationals
-# at resolution R in the support S
-@inline x2index(x, S::DaubSupport, R::Integer) = Int( (x-left(S))*2^R ) + 1
-@inline index2x(idx::Integer, S::DaubSupport, R::Integer) = (idx - 1)*2.0^(-R) + left(S)
 
