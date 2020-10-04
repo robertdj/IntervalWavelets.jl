@@ -1,13 +1,19 @@
 name = "IntervalWavelets"
 uuid = "0605f816-0bd7-11ea-1bbe-fb0a4d530a66"
 authors = ["Robert Dahl Jacobsen <git@dahl-jacobsen.dk>"]
-version = "0.1.0"
+version = "0.2.0"
 
 [deps]
 LinearAlgebra = "37e2e46d-f89d-539d-b4ee-838fcccc9c8e"
 OffsetArrays = "6fe1bfb0-de20-5000-8ca7-80f57d26f881"
 RecipesBase = "3cdcf5f2-1ef4-517c-9805-6587b60abb01"
 Wavelets = "29a6e085-ba6d-5f35-a997-948ac2efa89a"
+
+[compat]
+julia = "1.5"
+OffsetArrays = "1.3"
+RecipesBase = "1.1"
+Wavelets = "0.9"
 
 [extras]
 Test = "8dfed614-e22c-5e08-85e1-65c5234f0b40"
