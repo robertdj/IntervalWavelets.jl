@@ -7,6 +7,7 @@
 
 % Math
 \usepackage{amsmath, amssymb}
+\usepackage{mathtools}
 \usepackage{bm}
 	\newcommand{\vv}[1]{\ensuremath{\bm{#1}}}
 	\newcommand\lphi{\ensuremath{\phi^{\text{left}}}}
@@ -20,8 +21,25 @@
 	\newcommand\R{\ensuremath{\mathbb{R}}}
 	\newcommand\Z{\ensuremath{\mathbb{Z}}}
 	\DeclareMathOperator\supp{supp}
+	\DeclareMathOperator\spn{span}
+
+% Set
+% \given is part of the syntax, make sure it exists
+% \providecommand\given{}
+\newcommand\given{\:\vert\:}
+\newcommand\SetSymbol[1][]{
+	\nonscript\: #1 \vert \nonscript\:
+	\mathopen{} % make - etc behave as sign
+	\allowbreak % in text, allow line break after the \given
+}
+\DeclarePairedDelimiterX\Set[1]{\{}{\}}{
+	% Change is local to \Set
+	\renewcommand\given{\SetSymbol[\delimsize]}
+	#1
+}
 
 \usepackage{graphicx}
+\usepackage{asymptote}
 
 \usepackage[colorlinks=true]{hyperref}
 
@@ -39,7 +57,7 @@
 
 The purpose of the Julia package \href{https://github.com/robertdj/IntervalWavelets.jl}{IntervalWavelets.jl} is to compute ordinary Daubechies scaling functions (see e.g.\ \cite{Mallat:2009}) and the moment-preserving boundary scaling functions from \cite{Cohen:Daubechies:Vial:1993}.
 We rely on the recursive approach of \cite{Strang:1989}.
-In this short note I summarize these methods with all the details needed in the implementation.
+In this note I summarize these methods with all the details used in the implementation.
 
 
 \section{Interior scaling functions}
@@ -239,6 +257,68 @@ The four right boundary scaling functions related to four vanishing moments are 
 	\label{fig:right_Daubechies4}
 \end{figure}
 
+
+\section{Scaling functions on an interval}
+
+The left and right scaling functions are multiresolutions for the postive and negative halflines, respectively.
+We can combine the three kind of scaling functions to obtain a multiresoltion for an interval.
+Let us first recall a few properties of a multiresoltion analysis for $L^2(\R)$.
+We use the notation
+\begin{equation*}
+    \phi_{J,k}(x) = 2^{J/2} \phi(2^J x - k)
+\end{equation*}
+and 
+\begin{equation*}
+    V_J = \spn\Set{\phi_{J,k} \given k \in \Z}
+\end{equation*}
+Then
+\begin{equation*}
+    L^2(\R) = \overline{\bigcup_{J\in\Z} V_J}.
+\end{equation*}
+
+Initially we want a similar multiresoltion for the interval $[0, 1]$, that is, a relation of the form
+\begin{equation*}
+    L^2([0, 1]) = \overline{\bigcup_{J\in\Z} \widetilde V_J}
+\end{equation*}
+for suitably defined $\widetilde V_J$.
+We index the basis functions in $\widetilde V_J$ as $\widetilde \phi_1, \ldots, \widetilde \phi_N$.
+The first thing to notice is that all three kinds of scaling functions must be dilated such that their support is at most of length 1.
+Just as in the classic multiresoltion we dilate with numbers of the form $2^J$.
+Let $\tau_h$ deonte a translation operator, meaning that $(\tau_h f)(x) = f(x - h)$.
+Define
+\begin{equation*}
+    \widetilde \phi_k(x) = 
+    \begin{dcases}
+        \lphi_k(x), & 1\leq k\leq p, 
+        \\
+        \tau_k \phi(x) & p < k \leq N - p,
+        \\
+        \tau_1 \rphi_k(x) & N - p < k \leq N.
+    \end{dcases}
+\end{equation*}
+Then 
+\begin{equation*}
+    \widetilde V_J = \spn\Set[\big]{\widetilde \phi_{J,k} \given 0\leq k\leq N},
+    \quad
+    \widetilde \phi_{J,k}(x) = 2^{J/2} \widetilde \phi_k(2^J x).
+\end{equation*}
+As an example of the support of the interval basis functions consider \cref{fig:support}.
+
+\begin{figure}
+    \centering
+    \asyinclude{support.asy}
+    \caption{The support of the interval scaling functions with $p = 2$ vanishing moments at scale $J = 4$ computed at dyadic rationals of resolution $R = 4$.}
+    \label{fig:support}
+\end{figure}
+
+In \emph{IntervalWavelets} we want to evalute the interval scaling functions at the dyadic rationals of a predefined resolution $R$.
+Note that we have an interaction between the scale and the resolution:
+\begin{equation*}
+    \widetilde\phi_{J,k}\biggl(\frac n{2^R}\biggr)
+    = 2^{J/2} \widetilde \phi_k\biggl(2^J \frac n{2^R}\biggr)
+    = 2^{J/2} \widetilde \phi_k\biggl(\frac n{2^{R - J}}\biggr).
+\end{equation*}
+This means that in order to evaluate $\widetilde\phi_{J,k}$ in dyadic rationals of resolution $R$ we only need to compute $\widetilde\phi$ in dyadic rationals of resolution $R - J$.
 
 \printbibliography
 
