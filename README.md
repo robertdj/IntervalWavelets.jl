@@ -23,8 +23,6 @@ add IntervalWavelets
 
 # Scaling functions
 
-A second, boolean argument determines whether or not to use the linear phase (`true`) or minimum phase (`false`) scaling function; the default is `true`.
-
 Except for the explicitly defined [Haar wavelet](https://en.wikipedia.org/wiki/Haar_wavelet), Daubechies scaling functions can only be calculated at the [dyadic rationals](https://en.wikipedia.org/wiki/Dyadic_rational), i.e., rational numbers of the form k/2^R (where R >= 0).
 In *IntervalWavelets* we refer to R as the *resolution* of the dyadic rationals.
 
@@ -42,6 +40,8 @@ using Plots
 
 The ordinary Daubechies scaling functions are called *interior* scaling functions in *IntervalWavelets*.
 An interior scaling function is defined using a filter where we specify the number of vanishing moments and the phase.
+A second argument for `interior_filter` specifies the phase to be either minimum or symmlet (the default).
+
 Besides the filter we specify the resolution at which we wish to compute the scaling function:
 
 ````julia
@@ -53,6 +53,23 @@ plot(phi)
 
 
 ![](figures/README_interior_1.png)
+
+
+
+The scaling function `phi` can be evaluated in all dyadic rationals (where it is computed).
+As an example we evaluate `phi` in -0.5:
+
+````julia
+
+phi(DyadicRational(-1, 1))
+````
+
+
+````
+0.9330127018921028
+````
+
+
 
 
 
@@ -84,6 +101,24 @@ plot(R)
 
 
 
+The boundary scaling functions are indexed from 0 through `p - 1`, where `p` is the number of vanishing moments.
+
+````julia
+
+L[0]
+````
+
+
+````
+Left scaling function number 0 with 2 vanishing moments at resolution 8
+````
+
+
+
+
+
+Just as the interior scaling functions the individual boundary scaling functions can be evaluated in all dyadic rationals.
+
 
 # Reconstruction
 
@@ -101,6 +136,9 @@ plot(B)
 
 
 By default, the basis is on the interval [0, 1], but this can be specified with optional arguments.
+The basis functions are indexed from 1 through `2^J` where `J` is the scale.
+We do not return the *functions* as above, but the function *values* in the support.
+This is to make reconstruction faster.
 
 From a set of coefficients representing a function in a basis we can compute its reconstruction.
 
