@@ -1,7 +1,7 @@
 IntervalWavelets
 ================
 
-[![Build Status](https://travis-ci.org/robertdj/IntervalWavelets.jl.svg?branch=master)](https://travis-ci.org/robertdj/IntervalWavelets.jl)
+[![Build Status](https://github.com/robertdj/IntervalWavelets.jl/workflows/CI/badge.svg)](https://github.com/robertdj/IntervalWavelets.jl/actions)
 [![codecov.io](https://codecov.io/github/robertdj/IntervalWavelets.jl/coverage.svg?branch=master)](https://codecov.io/github/robertdj/IntervalWavelets.jl?branch=master)
 
 *IntervalWavelets* is a Julia package for computing ordinary/interior Daubechies scaling functions and the moment preserving boundary scaling functions of Cohen, Daubechies and Vial.
@@ -34,7 +34,7 @@ pyplot()
 ```
 
 The ordinary Daubechies scaling functions are called *interior* scaling functions in *IntervalWavelets*.
-An interior scaling function is defined using a filter where we specify the number of vanishing moments and the phase.
+An interior scaling function is defined using a filter where we specify the number of vanishing moments (of the associated wavelet) and the phase.
 A second argument for `interior_filter` specifies the phase to be either minimum or symmlet (the default).
 
 Besides the filter we specify the resolution at which we wish to compute the scaling function:
